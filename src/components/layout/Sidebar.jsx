@@ -21,25 +21,20 @@ const Sidebar = () => {
   }, [isOpen]);
 
   const NavItem = ({ icon: Icon, label, to }) => (
-    <NavLink 
-      to={to}
-      className={({ isActive }) => `
-        flex items-center px-4 py-3 cursor-pointer transition-all duration-200
-        ${isActive ? 'bg-[#0E1B31] border-l-4 border-orange-500 rounded-r-lg text-white' : 'hover:bg-white/5 text-gray-400'}
-        ${!isOpen ? 'justify-center px-0' : ''}
-      `}
-    >
-      <Icon size={20} />
-      {isOpen && <span className="ml-4 text-sm font-medium">{label}</span>}
-    </NavLink>
-  );
-const handleLogout = () => {
-  // 1. Clear the memory
-  localStorage.removeItem("isAuthenticated");
-  
-  // 2. Send back to login
-  window.location.href = "/login"; 
-};
+  <NavLink 
+    to={to}
+    className={({ isActive }) => `
+      flex items-center px-4 py-3 cursor-pointer transition-all duration-200 rounded-lg mx-2
+      ${isActive 
+        ? 'bg-[#112034]  border-l-4 border-orange-500' 
+        : 'text-gray-400 hover:bg-white/5 hover:text-white'}
+      ${!isOpen ? 'justify-center px-0 mx-0' : ''}
+    `}
+  >
+    <Icon size={20} className="transition-transform duration-200 group-hover:scale-110" />
+    {isOpen && <span className="ml-4 text-sm font-medium">{label}</span>}
+  </NavLink>
+);
   return (
 <aside 
   ref={sidebarRef}
@@ -60,14 +55,15 @@ const handleLogout = () => {
         )}
       </div>
 
-      <nav className="flex-1 px-2 space-y-1">
-        <NavItem icon={FileText} label="Blacklists" to="/blacklists" />
-        <NavItem icon={Users} label="Entries" to="/entries" />
-        <NavItem icon={Archive} label="Archives" to="/archives" />
-        <NavItem icon={Share2} label="Distribution" to="/distribution" />
-        <NavItem icon={History} label="Audit Logs" to="/logs" />
-        <NavItem icon={Settings} label="Settings" to="/settings" />
-      </nav>
+     <nav className="flex-1 px-2 space-y-1">
+  {/* Add /app to every "to" path */}
+  <NavItem icon={FileText} label="Blacklists" to="/app/blacklists" />
+  <NavItem icon={Users} label="Entries" to="/app/entries" />
+  <NavItem icon={Archive} label="Archives" to="/app/archives" />
+  <NavItem icon={Share2} label="Distribution" to="/app/distribution" />
+  <NavItem icon={History} label="Audit Logs" to="/app/logs" />
+  <NavItem icon={Settings} label="Settings" to="/app/settings" />
+</nav>
    <div className="p-4 border-t border-white/5">
         <div className={`flex items-center gap-3 p-3 rounded-xl bg-[#0E1B31] ${!isOpen ? 'justify-center bg-transparent p-0' : ''}`}>
           <div className="w-10 h-10 rounded-full bg-[#1e293b] flex items-center justify-center text-xs font-bold border border-white/10">MS</div>
