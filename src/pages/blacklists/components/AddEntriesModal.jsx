@@ -114,128 +114,189 @@ const AddEntriesModal = ({ onClose, onSave, initialData }) => {
 
         <div className="flex flex-1 overflow-hidden p-4 gap-4 bg-[#F8FAFC]">
           
-          {/* LEFT PANEL: FORM */}
-          <div className="w-[35%] bg-white border border-slate-200 rounded-3xl flex flex-col shadow-sm overflow-hidden">
-            <div className={`p-4 border-b font-bold flex items-center justify-between ${editingId ? 'bg-amber-50 text-amber-700 border-amber-100' : 'text-[#031124] border-slate-50'}`}>
-              <div className="flex items-center gap-2">
-                <User size={16} /> {editingId ? 'Editing Entry...' : 'Entry Details'}
-              </div>
-              {editingId && <span className="text-[10px] bg-amber-200 px-2 py-0.5 rounded-full">Active Edit Mode</span>}
-            </div>
-            
-            <div id="manual-form-container" className="flex-1 overflow-y-auto p-5 space-y-6 custom-scrollbar">
-              <Field label="Source" name="source" value={currentEntry.source} onChange={handleInputChange} />
-              
-              <div className="grid grid-cols-3 gap-2 pb-2 border-b border-slate-100">
-                {['name6', 'name1', 'name2', 'name3', 'name4', 'name5'].map(n => (
-                   <Field key={n} label={n.replace('name', 'Name ')} name={n} value={currentEntry[n]} onChange={handleInputChange} />
-                ))}
-              </div>
+{/* LEFT PANEL: FORM */}
+<div className="w-[35%] bg-white border border-slate-200 rounded-3xl flex flex-col shadow-sm overflow-hidden">
+  <div className={`p-4 border-b font-bold flex items-center justify-between ${editingId ? 'bg-amber-50 text-amber-700 border-amber-100' : 'text-[#031124] border-slate-50'}`}>
+    <div className="flex items-center gap-2">
+      <User size={16} /> {editingId ? 'Editing Entry...' : 'Entry Details'}
+    </div>
+    {editingId && <span className="text-[10px] bg-amber-200 px-2 py-0.5 rounded-full uppercase">Active Edit Mode</span>}
+  </div>
+  
+  <div id="manual-form-container" className="flex-1 overflow-y-auto p-5 space-y-8 custom-scrollbar">
+    
+    {/* 1. SOURCE & IDENTIFICATION */}
+    <section className="space-y-4">
+      <h3 className="text-xs font-black text-blue-600 uppercase tracking-widest">Identification</h3>
+      <Field label="Source" name="source" value={currentEntry.source} onChange={handleInputChange} />
+      <div className="grid grid-cols-3 gap-2">
+        {['name6', 'name1', 'name2', 'name3', 'name4', 'name5'].map(n => (
+           <Field key={n} label={n.replace('name', 'Name ')} name={n} value={currentEntry[n]} onChange={handleInputChange} />
+        ))}
+      </div>
+      <Field label="Title" name="title" value={currentEntry.title} onChange={handleInputChange} />
+    </section>
 
-              <Field label="Title" name="title" value={currentEntry.title} onChange={handleInputChange} />
-              
-              <div className="space-y-3 p-3 bg-slate-50 rounded-xl">
-                <Field label="Name Non-Latin Script" name="nameNonLatin" value={currentEntry.nameNonLatin} onChange={handleInputChange} />
-                <div className="grid grid-cols-2 gap-2">
-                  <Field label="Script Type" name="nonLatinType" value={currentEntry.nonLatinType} onChange={handleInputChange} />
-                  <Field label="Language" name="nonLatinLang" value={currentEntry.nonLatinLang} onChange={handleInputChange} />
-                </div>
-              </div>
+    {/* 2. NON-LATIN SCRIPT */}
+    <section className="space-y-3 p-4 bg-slate-50 rounded-2xl border border-slate-100">
+      <h3 className="text-[10px] font-bold text-slate-400 uppercase">Non-Latin Script Details</h3>
+      <Field label="Name Non-Latin Script" name="nameNonLatin" value={currentEntry.nameNonLatin} onChange={handleInputChange} />
+      <div className="grid grid-cols-2 gap-2">
+        <Field label="Script Type" name="nonLatinType" value={currentEntry.nonLatinType} onChange={handleInputChange} />
+        <Field label="Language" name="nonLatinLang" value={currentEntry.nonLatinLang} onChange={handleInputChange} />
+      </div>
+    </section>
 
-              <div className="grid grid-cols-3 gap-2">
-                <Field label="DOB" name="dob" type="date" value={currentEntry.dob} onChange={handleInputChange} />
-                <Field label="Town of Birth" name="townOfBirth" value={currentEntry.townOfBirth} onChange={handleInputChange} />
-                <Field label="Country of Birth" name="countryOfBirth" value={currentEntry.countryOfBirth} onChange={handleInputChange} />
-              </div>
+    {/* 3. BIRTH & NATIONALITY */}
+    <section className="space-y-4">
+      <h3 className="text-xs font-black text-blue-600 uppercase tracking-widest">Birth & Nationality</h3>
+      <div className="grid grid-cols-2 gap-2">
+        <Field label="DOB" name="dob" type="date" value={currentEntry.dob} onChange={handleInputChange} />
+        <Field label="Nationality" name="nationality" value={currentEntry.nationality} onChange={handleInputChange} />
+      </div>
+      <div className="grid grid-cols-2 gap-2">
+        <Field label="Town of Birth" name="townOfBirth" value={currentEntry.townOfBirth} onChange={handleInputChange} />
+        <Field label="Country of Birth" name="countryOfBirth" value={currentEntry.countryOfBirth} onChange={handleInputChange} />
+      </div>
+    </section>
 
-              <div className="grid grid-cols-2 gap-3">
-                <Field label="Nationality" name="nationality" value={currentEntry.nationality} onChange={handleInputChange} />
-                <Field label="Passport Number" name="passportNum" value={currentEntry.passportNum} onChange={handleInputChange} />
-              </div>
+    {/* 4. DOCUMENTS */}
+    <section className="space-y-4 p-4 bg-blue-50/50 rounded-2xl border border-blue-100/50">
+      <h3 className="text-[10px] font-bold text-blue-400 uppercase">Documents & IDs</h3>
+      <div className="grid grid-cols-2 gap-2">
+        <Field label="Passport Number" name="passportNum" value={currentEntry.passportNum} onChange={handleInputChange} />
+        <Field label="Passport Details" name="passportDetails" value={currentEntry.passportDetails} onChange={handleInputChange} />
+      </div>
+      <div className="grid grid-cols-2 gap-2">
+        <Field label="National ID Number" name="nationalId" value={currentEntry.nationalId} onChange={handleInputChange} />
+        <Field label="National ID Details" name="nationalIdDetails" value={currentEntry.nationalIdDetails} onChange={handleInputChange} />
+      </div>
+    </section>
 
-              <div className="grid grid-cols-2 gap-x-3 gap-y-2 pt-2 border-t border-slate-100">
-                {[1,2,3,4,5,6].map(num => (
-                  <Field key={num} label={`Address ${num}`} name={`addr${num}`} value={currentEntry[`addr${num}`]} onChange={handleInputChange} />
-                ))}
-              </div>
+    {/* 5. ADDRESSES */}
+    <section className="space-y-4">
+      <h3 className="text-xs font-black text-blue-600 uppercase tracking-widest">Address Information</h3>
+      <div className="grid grid-cols-2 gap-x-3 gap-y-3">
+        {[1,2,3,4,5,6].map(num => (
+          <Field key={num} label={`Address ${num}`} name={`addr${num}`} value={currentEntry[`addr${num}`]} onChange={handleInputChange} />
+        ))}
+      </div>
+      <div className="grid grid-cols-2 gap-2">
+        <Field label="Post/Zip Code" name="zipCode" value={currentEntry.zipCode} onChange={handleInputChange} />
+        <Field label="Country" name="country" value={currentEntry.country} onChange={handleInputChange} />
+      </div>
+    </section>
 
-              <div className="p-3 bg-blue-50 rounded-xl border border-blue-100">
-                <Field label="Group ID" name="groupId" value={currentEntry.groupId} onChange={handleInputChange} />
-              </div>
+    {/* 6. SANCTION & REGIME DETAILS */}
+    <section className="space-y-4 p-4 bg-red-50/30 rounded-2xl border border-red-100">
+      <h3 className="text-xs font-black text-red-600 uppercase tracking-widest">Sanction Details</h3>
+      <div className="grid grid-cols-2 gap-2">
+        <Field label="Group Type" name="groupType" value={currentEntry.groupType} onChange={handleInputChange} />
+        <Field label="Regime" name="regime" value={currentEntry.regime} onChange={handleInputChange} />
+      </div>
+      <div className="grid grid-cols-2 gap-2">
+        <Field label="Alias Type" name="aliasType" value={currentEntry.aliasType} onChange={handleInputChange} />
+        <Field label="Alias Quality" name="aliasQuality" value={currentEntry.aliasQuality} onChange={handleInputChange} />
+      </div>
+      <div className="grid grid-cols-2 gap-2">
+        <Field label="Listed On" name="listedOn" type="date" value={currentEntry.listedOn} onChange={handleInputChange} />
+        <Field label="UK Sanctions Date" name="ukSanctionsListDate" type="date" value={currentEntry.ukSanctionsListDate} onChange={handleInputChange} />
+      </div>
+      <Field label="Group ID" name="groupId" value={currentEntry.groupId} onChange={handleInputChange} />
+      <Field label="Other Information" name="otherInfo" value={currentEntry.otherInfo} onChange={handleInputChange} />
+    </section>
 
-              <button 
-                onClick={handleAddOrUpdateEntry} 
-                className={`w-full py-4 rounded-xl font-bold shadow-lg transition-all flex items-center justify-center gap-2 ${
-                  editingId ? 'bg-amber-500 hover:bg-amber-600 text-white' : 'bg-[#031124] hover:bg-slate-800 text-white'
-                }`}
-              >
-                {editingId ? <Check size={18} /> : null}
-                {editingId ? 'Update Entry in Table' : 'Add Entry to Table'}
-              </button>
-              
-              {editingId && (
-                <button 
-                  onClick={() => {
-                    setEditingId(null);
-                    setCurrentEntry({...currentEntry, name1: ''}); // Quick clear logic
-                  }}
-                  className="w-full text-slate-400 text-xs font-medium hover:underline"
-                >
-                  Cancel Edit
-                </button>
-              )}
-            </div>
-          </div>
+    {/* BUTTONS */}
+    <div className="sticky bottom-0 bg-white pt-4 pb-2">
+      <button 
+        onClick={handleAddOrUpdateEntry} 
+        className={`w-full py-4 rounded-xl font-bold shadow-lg transition-all flex items-center justify-center gap-2 ${
+          editingId ? 'bg-amber-500 hover:bg-amber-600 text-white' : 'bg-[#031124] hover:bg-slate-800 text-white'
+        }`}
+      >
+        {editingId ? <Check size={18} /> : null}
+        {editingId ? 'Update Entry in Table' : 'Add Entry to Table'}
+      </button>
+      
+      {editingId && (
+        <button 
+          onClick={() => { setEditingId(null); setCurrentEntry({ ...currentEntry, name1: '' }); }}
+          className="w-full mt-3 text-slate-400 text-xs font-medium hover:underline"
+        >
+          Cancel Edit
+        </button>
+      )}
+    </div>
+  </div>
+</div>
 
-          {/* RIGHT PANEL: TABLE PREVIEW */}
-          <div className="flex-1 bg-white border border-slate-200 rounded-3xl flex flex-col shadow-sm overflow-hidden">
-            <div className="p-4 border-b border-slate-50 font-bold text-[#031124] flex items-center gap-2">
-              <Shield size={16} className="text-emerald-500" /> Batch Preview ({entries.length})
-            </div>
-            <div className="flex-1 overflow-auto custom-scrollbar">
-              <table className="w-full text-left text-[11px] border-separate border-spacing-0">
-                <thead className="sticky top-0 bg-white z-20">
-                  <tr className="text-slate-400 uppercase font-bold">
-                    <th className="p-3 border-b sticky left-0 bg-white z-30">#</th>
-                    <th className="p-3 border-b whitespace-nowrap min-w-25">Actions</th>
-                    {["Name 6", "Name 1", "Name 2", "Name 3", "Name 4", "Name 5", "Title", "DOB", "Group ID"].map(head => (
-                      <th key={head} className="p-3 border-b whitespace-nowrap min-w-30">{head}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {entries.map((e, i) => (
-                    <tr key={e.id} className={`hover:bg-slate-50 transition-colors ${editingId === e.id ? 'bg-amber-50' : ''}`}>
-                      <td className="p-3 font-bold text-slate-400 sticky left-0 bg-inherit shadow-[1px_0_0_0_#e2e8f0]">{i+1}</td>
-                      <td className="p-3 flex gap-1">
-                        <button 
-                          onClick={() => startEditEntry(e)}
-                          className="p-1.5 text-blue-400 hover:bg-blue-50 rounded-lg"
-                        >
-                          <Edit2 size={14} />
-                        </button>
-                        <button 
-                          onClick={() => removeEntry(e.id)} 
-                          className="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg"
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                      </td>
-                      <td className="p-3 whitespace-nowrap">{e.name6}</td>
-                      <td className="p-3 whitespace-nowrap font-bold text-[#031124]">{e.name1}</td>
-                      <td className="p-3 whitespace-nowrap">{e.name2}</td>
-                      <td className="p-3 whitespace-nowrap">{e.name3}</td>
-                      <td className="p-3 whitespace-nowrap">{e.name4}</td>
-                      <td className="p-3 whitespace-nowrap">{e.name5}</td>
-                      <td className="p-3 whitespace-nowrap">{e.title}</td>
-                      <td className="p-3 whitespace-nowrap">{e.dob}</td>
-                      <td className="p-3 whitespace-nowrap font-bold text-blue-600">{e.groupId}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
+{/* Replace the RIGHT PANEL table section with this updated code */}
+<div className="flex-1 bg-white border border-slate-200 rounded-3xl flex flex-col shadow-sm overflow-hidden">
+  <div className="p-4 border-b border-slate-50 font-bold text-[#031124] flex items-center gap-2">
+    <Shield size={16} className="text-emerald-500" /> Batch Preview ({entries.length})
+  </div>
+  <div className="flex-1 overflow-auto custom-scrollbar">
+    <table className="w-full text-left text-[11px] border-separate border-spacing-0">
+      <thead className="sticky top-0 bg-white z-20">
+        <tr className="text-slate-400 uppercase font-bold">
+          <th className="p-3 border-b sticky left-0 bg-white z-30">#</th>
+          <th className="p-3 border-b whitespace-nowrap min-w-25">Actions</th>
+          {/* ALL YOUR REQUESTED COLUMNS HERE */}
+          {[
+            "Group ID", "Name 6", "Name 1", "Name 2", "Name 3", "Name 4", "Name 5", 
+            "Title", "Non-Latin Name", "Script Type", "Language", "DOB", 
+            "Town of Birth", "Country of Birth", "Nationality", "Passport Num", 
+            "Passport Details", "National ID", "ID Details", "Address 1", "Zip Code", 
+            "Country", "Other Info", "Group Type", "Alias Type", "Regime", 
+            "Listed On", "Last Updated"
+          ].map(head => (
+            <th key={head} className="p-3 border-b whitespace-nowrap min-w-32">{head}</th>
+          ))}
+        </tr>
+      </thead>
+      <tbody className="divide-y divide-slate-100">
+        {entries.map((e, i) => (
+          <tr key={e.id} className={`hover:bg-slate-50 transition-colors ${editingId === e.id ? 'bg-amber-50' : ''}`}>
+            <td className="p-3 font-bold text-slate-400 sticky left-0 bg-inherit shadow-[1px_0_0_0_#e2e8f0]">{i+1}</td>
+            <td className="p-3 flex gap-1">
+              <button onClick={() => startEditEntry(e)} className="p-1.5 text-blue-400 hover:bg-blue-50 rounded-lg"><Edit2 size={14} /></button>
+              <button onClick={() => removeEntry(e.id)} className="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg"><Trash2 size={14} /></button>
+            </td>
+            {/* MATCHING DATA CELLS */}
+            <td className="p-3 font-bold text-blue-600">{e.groupId}</td>
+            <td className="p-3">{e.name6}</td>
+            <td className="p-3 font-bold text-[#031124]">{e.name1}</td>
+            <td className="p-3">{e.name2}</td>
+            <td className="p-3">{e.name3}</td>
+            <td className="p-3">{e.name4}</td>
+            <td className="p-3">{e.name5}</td>
+            <td className="p-3">{e.title}</td>
+            <td className="p-3">{e.nameNonLatin}</td>
+            <td className="p-3">{e.nonLatinType}</td>
+            <td className="p-3">{e.nonLatinLang}</td>
+            <td className="p-3">{e.dob}</td>
+            <td className="p-3">{e.townOfBirth}</td>
+            <td className="p-3">{e.countryOfBirth}</td>
+            <td className="p-3">{e.nationality}</td>
+            <td className="p-3">{e.passportNum}</td>
+            <td className="p-3">{e.passportDetails}</td>
+            <td className="p-3">{e.nationalId}</td>
+            <td className="p-3">{e.nationalIdDetails}</td>
+            <td className="p-3">{e.addr1}</td>
+            <td className="p-3">{e.zipCode}</td>
+            <td className="p-3 font-semibold">{e.country}</td>
+            <td className="p-3 max-w-xs truncate">{e.otherInfo}</td>
+            <td className="p-3">{e.groupType}</td>
+            <td className="p-3">{e.aliasType}</td>
+            <td className="p-3">{e.regime}</td>
+            <td className="p-3">{e.listedOn}</td>
+            <td className="p-3">{e.lastUpdated}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+</div>
         </div>
 
         {/* FOOTER */}

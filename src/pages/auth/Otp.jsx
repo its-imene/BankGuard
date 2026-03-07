@@ -28,7 +28,7 @@ export default function Otp() {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (otp.every(d => d !== '')) {
-      localStorage.setItem("isAuthenticated", "true"); 
+      sessionStorage.setItem("isAuthenticated", "true"); 
       navigate("/app/blacklists"); 
     }
   };

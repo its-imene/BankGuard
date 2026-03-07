@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { FileText, Edit3, Trash2, Download, Filter, Check } from 'lucide-react';
 
-// 1. ADD 'onView' TO THE DESTRUCTURED PROPS HERE
 const BlacklistsTable = ({ data, currentFilter, onFilterChange, onEdit, onDelete, onView }) => {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const statuses = ['all', 'ready', 'erroneous', 'valid', 'processing'];
@@ -16,17 +15,16 @@ const BlacklistsTable = ({ data, currentFilter, onFilterChange, onEdit, onDelete
     }
   };
 
-  const handleDownload = (item) => {
-    // If it's a manual entry, we can't download a "fileObject", 
-    // so we skip this and let the ViewEntriesModal handle Excel export instead.
-    if (!item.fileObject) {
-      alert("This is a manual entry. Click the File icon to view and export as Excel.");
+  const handleDownload = (row) => {
+    // Check if it's a manual entry (no fileObject)
+    if (!row.fileObject) {
+      alert("This is a manual entry. Click the File icon to view and export data.");
       return;
     }
-    const url = URL.createObjectURL(item.fileObject);
+    const url = URL.createObjectURL(row.fileObject);
     const link = document.createElement('a');
     link.href = url;
-    link.download = item.fileName || 'download';
+    link.download = row.fileName || 'download';
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -34,7 +32,7 @@ const BlacklistsTable = ({ data, currentFilter, onFilterChange, onEdit, onDelete
 
   return (
     <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
-      {/* ... Filter Header Logic ... */}
+      {/* Table Header & Filter */}
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-lg font-bold text-slate-800">All Blacklists</h2>
         <div className="relative">
@@ -49,7 +47,7 @@ const BlacklistsTable = ({ data, currentFilter, onFilterChange, onEdit, onDelete
           </button>
 
           {isFilterOpen && (
-            <div className="absolute right-0 mt-2 w-40 bg-white border border-slate-200 rounded-xl shadow-lg z-10 py-1 overflow-hidden">
+            <div className="absolute right-0 mt-2 w-40 bg-white border border-slate-200 rounded-xl shadow-lg z-50 py-1 overflow-hidden">
               {statuses.map((status) => (
                 <button
                   key={status}
@@ -68,78 +66,91 @@ const BlacklistsTable = ({ data, currentFilter, onFilterChange, onEdit, onDelete
         </div>
       </div>
 
-      <table className="w-full text-left">
-        <thead>
-          <tr className="text-slate-400 text-xs uppercase tracking-wider border-b border-slate-100">
-            <th className="pb-4 font-bold">Version</th>
-            <th className="pb-4 font-bold">Source</th>
-            <th className="pb-4 font-bold">Reception Date</th>
-            <th className="pb-4 font-bold">Entries</th>
-            <th className="pb-4 font-bold">Status</th>
-            <th className="pb-4 text-center">Actions</th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-slate-50">
-          {data.length > 0 ? (
-            data.map((row) => (
-              <tr key={row.id} className="hover:bg-slate-50/50 transition-colors">
-                <td className="py-4 text-sm font-bold text-slate-700">{row.version}</td>
-                <td className="py-4 text-sm font-bold text-slate-700">{row.source}</td>
-                <td className="py-4 text-sm text-slate-600">{row.date}</td>
-                <td className="py-4 text-sm text-slate-600">{row.entriesCount || row.entries}</td>
-                <td className="py-4">
-                  <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase ${getStatusStyle(row.status)}`}>
-                    {row.status}
-                  </span>
-                </td>
-                <td className="py-4">
-                  <div className="flex justify-center items-center gap-4 text-slate-400">
-                    
-                    {/* 2. CORRECTED: Use 'row' instead of 'item' */}
-                    <button 
-                      onClick={() => onView(row)} 
-                      className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                      title="View Entries"
-                    >
-                      <FileText size={18} /> 
-                    </button>
+      {/* Main Table */}
+      <div className="overflow-x-auto">
+        <table className="w-full text-left">
+          <thead>
+            <tr className="text-slate-400 text-xs uppercase tracking-wider border-b border-slate-100">
+              <th className="pb-4 font-bold">Version</th>
+              <th className="pb-4 font-bold">Source</th>
+              <th className="pb-4 font-bold">Reception Date</th>
+              <th className="pb-4 font-bold">Entries</th>
+              <th className="pb-4 font-bold">Status</th>
+              <th className="pb-4 text-center">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-50">
+            {data.length > 0 ? (
+              data.map((row) => (
+                <tr key={row.id} className="hover:bg-slate-50/50 transition-colors">
+                  <td className="py-4 text-sm font-bold text-slate-700">{row.version}</td>
+                  <td className="py-4 text-sm font-bold text-slate-700">{row.source}</td>
+                  <td className="py-4 text-sm text-slate-600">{row.date}</td>
+                  
+                  {/* AUTOMATIC COUNTER LOGIC */}
+                  <td className="py-4 text-sm text-slate-600">
+                    {row.manualData && row.manualData.length > 0 
+                      ? row.manualData.length 
+                      : (row.entriesCount || row.entries || 0)}
+                  </td>
 
-                    <button 
-                      onClick={() => onEdit(row)} 
-                      className="hover:text-amber-600"
-                      title="Edit Batch"
-                    >
-                      <Edit3 size={18} />
-                    </button>
+                  <td className="py-4">
+                    <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase ${getStatusStyle(row.status)}`}>
+                      {row.status}
+                    </span>
+                  </td>
+                  
+                  <td className="py-4">
+                    <div className="flex justify-center items-center gap-2">
+                      {/* VIEW ENTRIES */}
+                      <button 
+                        onClick={() => onView(row)} 
+                        className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                        title="View Entries"
+                      >
+                        <FileText size={18} /> 
+                      </button>
 
-                    <button 
-                      onClick={() => onDelete(row.id)} 
-                      className="hover:text-red-600"
-                      title="Delete Batch"
-                    >
-                      <Trash2 size={18} />
-                    </button>
+                      {/* EDIT BATCH */}
+                      <button 
+                        onClick={() => onEdit(row)} 
+                        className="p-2 text-slate-400 hover:text-amber-500 hover:bg-amber-50 rounded-lg transition-all"
+                        title="Edit Batch"
+                      >
+                        <Edit3 size={18} />
+                      </button>
 
-                    <button 
-                      onClick={() => handleDownload(row)}
-                      className="hover:text-slate-800 transition-colors"
-                      title="Download Original File"
-                    >
-                      <Download size={18} />
-                    </button>
-                  </div>
+                      {/* DELETE BATCH */}
+                      <button 
+                        onClick={() => onDelete(row.id)} 
+                        className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                        title="Delete Batch"
+                      >
+                        <Trash2 size={18} />
+                      </button>
+
+                      {/* DOWNLOAD ORIGINAL FILE */}
+                      <button 
+                        onClick={() => handleDownload(row)}
+                        className="p-2 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-all"
+                        title="Download Original"
+                      >
+                        <Download size={18} />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan="6" className="py-10 text-center text-slate-400 italic">
+                  No blacklists found.
                 </td>
               </tr>
-            ))
-          ) : (
-            <tr>
-              <td colSpan="6" className="py-10 text-center text-slate-400 italic">
-                No blacklists found.
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
+            )}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 };

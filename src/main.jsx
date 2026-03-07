@@ -16,7 +16,8 @@ import ForgotPassword from './pages/auth/ForgotPassword';
 
 // 🛡️ The Gatekeeper: This checks login status on every single navigation
 const ProtectedRoute = ({ children }) => {
-  const auth = localStorage.getItem("isAuthenticated") === "true";
+  // Switch from localStorage to sessionStorage
+  const auth = sessionStorage.getItem("isAuthenticated") === "true";
   return auth ? children : <Navigate to="/login" replace />;
 };
 
