@@ -33,6 +33,13 @@ export default function Otp() {
     }
   };
 
+  const handleResend = () => {
+    alert("Code resent!");
+    
+    setOtp(['', '', '', '', '', '']);           
+    inputRefs.current[0]?.focus();             
+  };
+
   const isComplete = otp.every(digit => digit !== '');
 
   return (
@@ -57,7 +64,7 @@ export default function Otp() {
                   ref={el => inputRefs.current[index] = el}
                   onChange={e => handleChange(e, index)}
                   onKeyDown={e => handleKeyDown(e, index)}
-                  className="w-11.25 h-15 text-xl font-bold text-center bg-[#1e293b] border-2 border-[#334155] rounded-xl text-white focus:outline-none focus:border-[#ff5925] focus:ring-4 focus:ring-[#ff5925]/25 transition-all"
+                  className="w-12 h-14 text-xl font-bold text-center border-2 rounded-lg text-[#343a43] transition-all duration-200 focus:outline-none border-[#2d3748] focus:border-[#ff6b6b] focus:ring-4 focus:ring-[#ff6b6b]/40"
                   inputMode="numeric"
                 />
               ))}
@@ -73,7 +80,7 @@ export default function Otp() {
 
             <div className="mt-5 text-[0.95rem] text-[#94a3b8]">
               <p>You haven't received the code?</p>
-              <button type="button" className="text-[#ff5925] font-medium underline hover:text-[#ff7a3d]" onClick={() => alert("Code resent!")}>
+              <button type="button" className="text-[#ff5925] font-medium underline hover:text-[#ff7a3d]" onClick={handleResend}>
                 Resend code
               </button>
             </div>
