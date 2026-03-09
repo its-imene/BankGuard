@@ -11,7 +11,7 @@ import Distribution from "./pages/distribution/Distribution";
 import AuditLogs from "./pages/audit/Audit";
 import Settings from "./pages/Settings";
 import Login from './pages/auth/Login';
-import Otp from './pages/auth/Otp';
+import Otp from './pages/auth/OTP';
 import ForgotPassword from './pages/auth/ForgotPassword';
 
 // 🛡️ The Gatekeeper: This checks login status on every single navigation
