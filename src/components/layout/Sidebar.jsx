@@ -58,10 +58,11 @@ const Sidebar = () => {
      <nav className="flex-1 px-2 space-y-1">
   {/* Add /app to every "to" path */}
   <NavItem icon={FileText} label="Blacklists" to="/app/blacklists" />
-  <NavItem icon={Users} label="Entries" to="/app/entries" />
+ 
   <NavItem icon={Archive} label="Archives" to="/app/archives" />
   <NavItem icon={Share2} label="Distribution" to="/app/distribution" />
   <NavItem icon={History} label="Audit Logs" to="/app/logs" />
+   <NavItem icon={Users} label="Manage Users" to="/app/users" />
   <NavItem icon={Settings} label="Settings" to="/app/settings" />
 </nav>
    <div className="p-4 border-t border-white/5">

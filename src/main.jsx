@@ -5,7 +5,7 @@ import { createBrowserRouter, RouterProvider, Navigate } from "react-router-dom"
 
 import App from "./App";
 import Blacklists from "./pages/blacklists/Blacklists"; 
-import Entries from "./pages/entries/Entries";
+import Users from "./pages/users/Users";
 import Archives from "./pages/Archives";
 import Distribution from "./pages/distribution/Distribution";
 import AuditLogs from "./pages/audit/Audit";
@@ -40,10 +40,11 @@ const router = createBrowserRouter([
     children: [
       { index: true, element: <Navigate to="blacklists" replace /> },
       { path: "blacklists", element: <Blacklists /> },
-      { path: "entries", element: <Entries /> },
+     
       { path: "archives", element: <Archives /> },
       { path: "distribution", element: <Distribution /> },
       { path: "logs", element: <AuditLogs /> },
+       { path: "users", element: <Users /> },
       { path: "settings", element: <Settings /> },
     ],
   },

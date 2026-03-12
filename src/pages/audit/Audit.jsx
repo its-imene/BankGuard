@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Trash2, CheckCircle2 } from "lucide-react";
 import LogsTable from "./components/AuditTable";
-import UsersModal from "../users/UsersModal";
+//import UsersModal from "../users/UsersModal";
 
 // ── Delete confirmation modal
 function DeleteModal({ row, onConfirm, onCancel }) {
