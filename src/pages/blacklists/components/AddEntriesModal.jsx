@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { X, User, Shield, Search, Trash2, Edit2, Check } from 'lucide-react';
+import { X, User, Shield, Trash2, Edit2, Check, Plus, Info } from 'lucide-react';
 
-// --- FIELD COMPONENT (STABLE OUTSIDE RENDER) ---
-const Field = ({ label, name, value, onChange, type = "text" }) => (
+// --- FIELD COMPONENT ---
+const Field = ({ label, name, value, onChange, type = "text", placeholder = "" }) => (
   <div className="flex flex-col gap-1">
     <label className="text-[10px] font-bold text-slate-500 uppercase tracking-tight">{label}</label>
     <input 
@@ -10,17 +10,21 @@ const Field = ({ label, name, value, onChange, type = "text" }) => (
       type={type} 
       value={value || ''} 
       onChange={onChange}
+      placeholder={placeholder}
       className="border border-slate-200 rounded-lg px-3 py-1.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all bg-white text-[#031124]" 
     />
   </div>
 );
 
 const AddEntriesModal = ({ onClose, onSave, initialData }) => {
-  // 1. Initialize entries with data from the batch being edited
   const [entries, setEntries] = useState(initialData?.manualData || []);
-  
-  // Track if we are currently editing a row from the table
   const [editingId, setEditingId] = useState(null);
+
+  // --- 1. ÉTAT POUR LES INFOS GÉNÉRALES DU BATCH (ID & SOURCE) ---
+  const [batchInfo, setBatchInfo] = useState({
+    blacklistId: initialData?.blacklistId || '', // On mappe vers 'version' pour la table principale
+    source: initialData?.source || ''
+  });
 
   const [currentEntry, setCurrentEntry] = useState({
     name6: '', name1: '', name2: '', name3: '', name4: '', name5: '',
@@ -29,8 +33,7 @@ const AddEntriesModal = ({ onClose, onSave, initialData }) => {
     nationality: '', passportNum: '', passportDetails: '', nationalId: '', nationalIdDetails: '',
     addr1: '', addr2: '', addr3: '', addr4: '', addr5: '', addr6: '', zipCode: '', country: '',
     otherInfo: '', groupType: '', aliasType: '', aliasQuality: '', regime: '',
-    listedOn: '', ukSanctionsListDate: '', lastUpdated: '', groupId: '', 
-    source: initialData?.source || '' 
+    listedOn: '', ukSanctionsListDate: '', lastUpdated: '', groupId: ''
   });
 
   const handleInputChange = (e) => {
@@ -38,23 +41,25 @@ const AddEntriesModal = ({ onClose, onSave, initialData }) => {
     setCurrentEntry(prev => ({ ...prev, [name]: value }));
   };
 
+  const handleBatchChange = (e) => {
+    const { name, value } = e.target;
+    setBatchInfo(prev => ({ ...prev, [name]: value }));
+  };
+
   const handleAddOrUpdateEntry = () => {
     if (!currentEntry.name1) {
-      alert("Please enter at least 'Name 1' to identify this entry.");
+      alert("Please enter at least 'Name 1' for this person.");
       return;
     }
 
     if (editingId) {
-      // UPDATE existing row in the table
       setEntries(entries.map(entry => entry.id === editingId ? { ...currentEntry, id: editingId } : entry));
       setEditingId(null);
     } else {
-      // ADD new row to the table
       setEntries([...entries, { ...currentEntry, id: Date.now() }]);
     }
     
-    // Reset form but keep the Source
-    const sourceVal = currentEntry.source;
+    // RESET DU FORMULAIRE (Mais on garde le Batch ID et la Source intacts)
     setCurrentEntry({
       name6: '', name1: '', name2: '', name3: '', name4: '', name5: '',
       title: '', nameNonLatin: '', nonLatinType: '', nonLatinLang: '',
@@ -62,41 +67,41 @@ const AddEntriesModal = ({ onClose, onSave, initialData }) => {
       nationality: '', passportNum: '', passportDetails: '', nationalId: '', nationalIdDetails: '',
       addr1: '', addr2: '', addr3: '', addr4: '', addr5: '', addr6: '', zipCode: '', country: '',
       otherInfo: '', groupType: '', aliasType: '', aliasQuality: '', regime: '',
-      listedOn: '', ukSanctionsListDate: '', lastUpdated: '', groupId: '', source: sourceVal
+      listedOn: '', ukSanctionsListDate: '', lastUpdated: '', groupId: ''
     });
   };
 
-  // Move data from table back into form to edit it
   const startEditEntry = (entry) => {
     setEditingId(entry.id);
     setCurrentEntry(entry);
-    // Scroll form to top
     const formContainer = document.getElementById('manual-form-container');
     if (formContainer) formContainer.scrollTop = 0;
   };
 
   const removeEntry = (id) => {
     setEntries(entries.filter(entry => entry.id !== id));
-    if (editingId === id) {
-        setEditingId(null);
-        // Optional: clear form here if needed
-    }
+    if (editingId === id) setEditingId(null);
   };
 
+// ... (reste du code identique)
   const handleFinalSave = () => {
-    if (entries.length === 0) return alert("Add at least one entry.");
+    if (!batchInfo.blacklistId || !batchInfo.source) {
+      return alert("Please provide both Blacklist ID and Source for this batch.");
+    }
+    if (entries.length === 0) return alert("Add at least one person to the list.");
     
-    // Construct the full object for the main Blacklists array
     onSave({
-      ...initialData, // Keeps the original ID of the batch
-      source: currentEntry.source || initialData?.source || "Manual Entry",
-      version: initialData?.version || `V${new Date().getFullYear()}.${entries.length}`,
+      ...initialData,
+      source: batchInfo.source,
+      blacklistId: batchInfo.blacklistId, // On utilise cette clé de façon consistante
+      version: batchInfo.blacklistId,     // On garde version pour la compatibilité si besoin
       status: 'ready',
       date: initialData?.date || new Date().toISOString().split('T')[0],
       entriesCount: entries.length.toString(),
       manualData: entries 
     });
   };
+// ...
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
@@ -104,9 +109,14 @@ const AddEntriesModal = ({ onClose, onSave, initialData }) => {
         
         {/* Header */}
         <div className="px-8 py-4 border-b border-slate-100 flex justify-between items-center bg-white">
-          <h2 className="text-xl font-bold text-[#031124]">
-            {initialData ? 'Edit Blacklist Batch' : 'Manual Batch Entry'}
-          </h2>
+          <div className="flex items-center gap-3">
+            <div className="bg-[#031124] p-2 rounded-xl text-white">
+              <Shield size={20} />
+            </div>
+            <h2 className="text-xl font-bold text-[#031124]">
+              {initialData ? 'Edit Blacklist Batch' : 'New Manual Batch Entry'}
+            </h2>
+          </div>
           <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-400">
             <X size={20} />
           </button>
@@ -114,30 +124,49 @@ const AddEntriesModal = ({ onClose, onSave, initialData }) => {
 
         <div className="flex flex-1 overflow-hidden p-4 gap-4 bg-[#F8FAFC]">
           
-{/* LEFT PANEL: FORM */}
-<div className="w-[35%] bg-white border border-slate-200 rounded-3xl flex flex-col shadow-sm overflow-hidden">
-  <div className={`p-4 border-b font-bold flex items-center justify-between ${editingId ? 'bg-amber-50 text-amber-700 border-amber-100' : 'text-[#031124] border-slate-50'}`}>
-    <div className="flex items-center gap-2">
-      <User size={16} /> {editingId ? 'Editing Entry...' : 'Entry Details'}
-    </div>
-    {editingId && <span className="text-[10px] bg-amber-200 px-2 py-0.5 rounded-full uppercase">Active Edit Mode</span>}
-  </div>
-  
-  <div id="manual-form-container" className="flex-1 overflow-y-auto p-5 space-y-8 custom-scrollbar">
-    
-    {/* 1. SOURCE & IDENTIFICATION */}
-    <section className="space-y-4">
-      <h3 className="text-xs font-black text-blue-600 uppercase tracking-widest">Identification</h3>
-      <Field label="Source" name="source" value={currentEntry.source} onChange={handleInputChange} />
-      <div className="grid grid-cols-3 gap-2">
-        {['name6', 'name1', 'name2', 'name3', 'name4', 'name5'].map(n => (
-           <Field key={n} label={n.replace('name', 'Name ')} name={n} value={currentEntry[n]} onChange={handleInputChange} />
-        ))}
-      </div>
-      <Field label="Title" name="title" value={currentEntry.title} onChange={handleInputChange} />
-    </section>
+          {/* LEFT PANEL: FORM */}
+          <div className="w-[35%] bg-white border border-slate-200 rounded-3xl flex flex-col shadow-sm overflow-hidden">
+            
+            {/* --- SECTION FIXE : BATCH IDENTITY --- */}
+            <div className="p-5 bg-blue-50/50 border-b border-blue-100">
+              <div className="flex items-center gap-2 mb-3">
+                <Info size={14} className="text-blue-600" />
+                <h3 className="text-[10px] font-black text-blue-600 uppercase tracking-widest">Batch Identity</h3>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <Field 
+                  label="Blacklist ID" 
+                  name="blacklistId" 
+                  value={batchInfo.blacklistId} 
+                  onChange={handleBatchChange} 
+                  placeholder="Ex: LIST-2026-01"
+                />
+                <Field 
+                  label="Source" 
+                  name="source" 
+                  value={batchInfo.source} 
+                  onChange={handleBatchChange} 
+                  placeholder="Ex: Reuters / WorldCheck"
+                />
+              </div>
+            </div>
 
-    {/* 2. NON-LATIN SCRIPT */}
+            <div id="manual-form-container" className="flex-1 overflow-y-auto p-5 space-y-8 custom-scrollbar">
+              <div className={`flex items-center justify-between mb-2 ${editingId ? 'text-amber-600' : 'text-slate-400'}`}>
+                 <h3 className="text-xs font-black uppercase tracking-widest">Person Details</h3>
+                 {editingId && <span className="text-[9px] bg-amber-100 px-2 py-0.5 rounded-full font-bold">EDITING MODE</span>}
+              </div>
+
+              {/* Formulaire des personnes (le reste de tes champs) */}
+              <section className="space-y-4">
+                <div className="grid grid-cols-3 gap-2">
+                  {['name6', 'name1', 'name2', 'name3', 'name4', 'name5'].map(n => (
+                     <Field key={n} label={n.replace('name', 'Name ')} name={n} value={currentEntry[n]} onChange={handleInputChange} />
+                  ))}
+                </div>
+                <Field label="Title" name="title" value={currentEntry.title} onChange={handleInputChange} />
+              </section>
+            {/* 2. NON-LATIN SCRIPT */}
     <section className="space-y-3 p-4 bg-slate-50 rounded-2xl border border-slate-100">
       <h3 className="text-[10px] font-bold text-slate-400 uppercase">Non-Latin Script Details</h3>
       <Field label="Name Non-Latin Script" name="nameNonLatin" value={currentEntry.nameNonLatin} onChange={handleInputChange} />
@@ -207,31 +236,25 @@ const AddEntriesModal = ({ onClose, onSave, initialData }) => {
     </section>
 
     {/* BUTTONS */}
-    <div className="sticky bottom-0 bg-white pt-4 pb-2">
-      <button 
-        onClick={handleAddOrUpdateEntry} 
-        className={`w-full py-4 rounded-xl font-bold shadow-lg transition-all flex items-center justify-center gap-2 ${
-          editingId ? 'bg-amber-500 hover:bg-amber-600 text-white' : 'bg-[#031124] hover:bg-slate-800 text-white'
-        }`}
-      >
-        {editingId ? <Check size={18} /> : null}
-        {editingId ? 'Update Entry in Table' : 'Add Entry to Table'}
-      </button>
-      
-      {editingId && (
-        <button 
-          onClick={() => { setEditingId(null); setCurrentEntry({ ...currentEntry, name1: '' }); }}
-          className="w-full mt-3 text-slate-400 text-xs font-medium hover:underline"
-        >
-          Cancel Edit
-        </button>
-      )}
-    </div>
-  </div>
-</div>
+              {/* ... Tes sections 2 à 6 (Non-Latin, Birth, Documents, etc.) ... */}
+              {/* Garde le code que tu avais pour ces sections ici */}
 
-{/* Replace the RIGHT PANEL table section with this updated code */}
-<div className="flex-1 bg-white border border-slate-200 rounded-3xl flex flex-col shadow-sm overflow-hidden">
+              <div className="sticky bottom-0 bg-white pt-4 pb-2">
+                <button 
+                  onClick={handleAddOrUpdateEntry} 
+                  className={`w-full py-4 rounded-xl font-bold shadow-lg transition-all flex items-center justify-center gap-2 ${
+                    editingId ? 'bg-amber-500 hover:bg-amber-600 text-white' : 'bg-[#031124] hover:bg-slate-800 text-white'
+                  }`}
+                >
+                  {editingId ? <Check size={18} /> : <Plus size={18} />}
+                  {editingId ? 'Update Person in Table' : 'Add Person to Table'}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* RIGHT PANEL: TABLE PREVIEW */}
+         <div className="flex-1 bg-white border border-slate-200 rounded-3xl flex flex-col shadow-sm overflow-hidden">
   <div className="p-4 border-b border-slate-50 font-bold text-[#031124] flex items-center gap-2">
     <Shield size={16} className="text-emerald-500" /> Batch Preview ({entries.length})
   </div>
@@ -304,9 +327,9 @@ const AddEntriesModal = ({ onClose, onSave, initialData }) => {
           <button onClick={onClose} className="px-6 py-2.5 text-slate-500 font-bold hover:bg-slate-50 rounded-xl">Discard</button>
           <button 
             onClick={handleFinalSave} 
-            className="px-10 py-2.5 bg-[#031124] text-white rounded-xl font-bold shadow-xl hover:bg-slate-800"
+            className="px-10 py-2.5 bg-[#031124] text-white rounded-xl font-bold shadow-xl hover:bg-slate-800 transition-all active:scale-95"
           >
-            {initialData ? 'Update & Save Batch' : `Save ${entries.length} Entries`}
+            {initialData ? 'Update & Save Batch' : `Finalize & Save Batch`}
           </button>
         </div>
       </div>

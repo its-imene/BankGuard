@@ -71,7 +71,7 @@ const BlacklistsTable = ({ data, currentFilter, onFilterChange, onEdit, onDelete
         <table className="w-full text-left">
           <thead>
             <tr className="text-slate-400 text-xs uppercase tracking-wider border-b border-slate-100">
-              <th className="pb-4 font-bold">Version</th>
+              <th className="pb-4 font-bold">Blacklist ID</th>
               <th className="pb-4 font-bold">Source</th>
               <th className="pb-4 font-bold">Reception Date</th>
               <th className="pb-4 font-bold">Entries</th>

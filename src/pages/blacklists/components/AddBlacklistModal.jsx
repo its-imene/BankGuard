@@ -4,7 +4,7 @@ import { X, CloudUpload } from 'lucide-react';
 const AddBlacklistModal = ({ onClose, onSave }) => {
   const [formData, setFormData] = useState({
     source: '',
-    version: '',
+    BlacklistID: '',
     status: 'ready' // Defaulting to ready as per design
   });
   const [selectedFile, setSelectedFile] = useState(null);
@@ -18,7 +18,7 @@ const AddBlacklistModal = ({ onClose, onSave }) => {
   const handleSubmit = (e) => {
     e.preventDefault();
     
-    if (!formData.source || !formData.version || !selectedFile) {
+    if (!formData.source || !formData.BlacklistID || !selectedFile) {
       alert("Please fill all fields and select a document.");
       return;
     }
@@ -59,14 +59,14 @@ const AddBlacklistModal = ({ onClose, onSave }) => {
             />
           </div>
 
-          {/* Version Row */}
+          {/* ID Row */}
           <div className="flex items-center">
-            <label className="w-24 text-right text-xs font-bold text-slate-700 mr-6">Version</label>
+            <label className="w-24 text-right text-xs font-bold text-slate-700 mr-6">Blacklist ID</label>
             <input 
               required
-              value={formData.version}
-              onChange={(e) => setFormData({...formData, version: e.target.value})}
-              placeholder="V2023.10.01"
+              value={formData.BlacklistID}
+              onChange={(e) => setFormData({...formData, BlacklistID: e.target.value})}
+              
               className="flex-1 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-medium outline-none"
             />
           </div>

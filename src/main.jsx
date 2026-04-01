@@ -6,7 +6,7 @@ import { createBrowserRouter, RouterProvider, Navigate } from "react-router-dom"
 import App from "./App";
 import Blacklists from "./pages/blacklists/Blacklists"; 
 import Users from "./pages/users/Users";
-import Archives from "./pages/Archives";
+import Archives from "./pages/archives/Archives";
 import Distribution from "./pages/distribution/Distribution";
 import AuditLogs from "./pages/audit/Audit";
 import Settings from "./pages/Settings";

@@ -133,7 +133,7 @@ function Login() {
                   />
                 )}
               </div>
-              <div className="min-h-[1.5rem] mt-1 ml-1 flex items-center justify-between mb-6">
+              <div className="min-h-6 mt-1 ml-1 flex items-center justify-between mb-6">
                 <div className="flex items-center gap-1">
                   {errors.password && touched.password && (
                     <>

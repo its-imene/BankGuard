@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
 import { Plus } from 'lucide-react';
+import { useOutletContext } from 'react-router-dom'; // <--- Important
 import BlacklistsTable from './components/BlacklistsTable';
 import AddBlacklistModal from './components/AddBlacklistModal';
 
@@ -11,19 +12,27 @@ import BlacklistMethodModal from './BlacklistMethodModal';
 import AddEntriesModal from './components/AddEntriesModal';
 
 const Blacklists = () => {
+  const { searchQuery } = useOutletContext(); // Récupère la recherche depuis App.js
   const [blacklists, setBlacklists] = useState([]);
   const [filterStatus, setFilterStatus] = useState('all');
   const [viewingItem, setViewingItem] = useState(null);
-
+  const [archivedBlacklists, setArchivedBlacklists] = useState([]);
   // Modal States
   const [showMethodSelector, setShowMethodSelector] = useState(false); // First popup choice
   const [isAddOpen, setIsAddOpen] = useState(false);                   // File Upload modal
   const [isManualOpen, setIsManualOpen] = useState(false);             // Manual Entry modal
   const [editingItem, setEditingItem] = useState(null);
 
-  const filteredData = filterStatus === 'all'
-    ? blacklists
-    : blacklists.filter(item => item.status === filterStatus);
+ const filteredData = blacklists.filter(item => {
+    const matchesSearch = 
+      (item.blacklistId?.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (item.source?.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (item.version?.toLowerCase().includes(searchQuery.toLowerCase()));
+
+    const matchesStatus = filterStatus === 'all' || item.status === filterStatus;
+
+    return matchesSearch && matchesStatus;
+  });
 
   // Unified save function for both manual and file uploads
   const addBlacklist = (newItem) => {
@@ -37,9 +46,26 @@ const Blacklists = () => {
     setEditingItem(null);
   };
 
-  const deleteBlacklist = (id) => {
-    if (window.confirm("Are you sure you want to delete this blacklist?")) {
-      setBlacklists(blacklists.filter(item => item.id !== id));
+ const deleteBlacklist = (id) => {
+    const itemToArchive = blacklists.find(item => item.id === id);
+    
+    if (!itemToArchive) return;
+
+    // On récupère l'identifiant saisi pour le message de confirmation
+    const displayId = itemToArchive.blacklistId || itemToArchive.version || "N/A";
+    
+    if (window.confirm(`Voulez-vous vraiment archiver la liste "${displayId}" ?`)) {
+      // Ajouter à l'état des archives
+      setArchivedBlacklists(prev => [
+        ...prev, 
+        { 
+          ...itemToArchive, 
+          archiveDate: new Date().toISOString().split('T')[0]
+        }
+      ]);
+      
+      // Retirer de la liste principale
+      setBlacklists(prev => prev.filter(item => item.id !== id));
     }
   };
 
