@@ -50,20 +50,13 @@ function Toast({ message, onDone }) {
   );
 }
 
-// ── Initial data ───────────────────────────────────────────────
-const INITIAL_USERS = [
-  { id: 1, name: "Benammer Samir", role: "Data entry",   status: "active",   email: "benammer.samir@company.com",  userId: "benammer.s" },
-  { id: 2, name: "Ali Mohamed",    role: "Verification", status: "active",   email: "ali.mohamed@company.com",     userId: "ali.m"      },
-  { id: 3, name: "Kaci Hamid",     role: "Admin",        status: "inactive", email: "kaci.hamid@company.com",      userId: "kaci.h"     },
-];
-
 // ── Page ───────────────────────────────────────────────────────
 export default function Users() {
-  const [users, setUsers]               = useState(INITIAL_USERS);
-  const [showAddModal, setShowAddModal]  = useState(false);
-  const [editingUser, setEditingUser]    = useState(null);
+  const [users, setUsers]                 = useState([]);
+  const [showAddModal, setShowAddModal]   = useState(false);
+  const [editingUser, setEditingUser]     = useState(null);
   const [pendingDelete, setPendingDelete] = useState(null);
-  const [toast, setToast]                = useState(null);
+  const [toast, setToast]                 = useState(null);
 
   const handleAddUser = (newUser) => {
     setUsers(prev => [...prev, { ...newUser, id: Date.now() }]);
