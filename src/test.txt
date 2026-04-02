@@ -1,0 +1,121 @@
+import React, { useState } from 'react';
+import { Plus } from 'lucide-react';
+import BlacklistsTable from './components/BlacklistsTable';
+import AddBlacklistModal from './components/AddBlacklistModal';
+import EditBlacklistModal from './components/EditBlacklistModal';
+
+const Blacklists = () => {
+  // Initialize as an empty array so the table starts empty
+  const [blacklists, setBlacklists] = useState([]);
+
+  const [filterStatus, setFilterStatus] = useState('all'); 
+  const [isAddOpen, setIsAddOpen] = useState(false);
+  const [editingItem, setEditingItem] = useState(null);
+
+  // Filtering logic remains the same
+  const filteredData = filterStatus === 'all' 
+    ? blacklists 
+    : blacklists.filter(item => item.status === filterStatus);
+
+  const addBlacklist = (newItem) => {
+    // Generates a unique ID and adds the new entry to the empty list
+    setBlacklists([...blacklists, { ...newItem, id: Date.now() }]);
+    setIsAddOpen(false);
+  };
+
+  const updateBlacklist = (updatedItem) => {
+    setBlacklists(blacklists.map(item => item.id === updatedItem.id ? updatedItem : item));
+    setEditingItem(null);
+  };
+
+  const deleteBlacklist = (id) => {
+    if (window.confirm("Are you sure you want to delete this blacklist?")) {
+      setBlacklists(blacklists.filter(item => item.id !== id));
+    }
+  };
+
+  return (
+    <div className="p-8 space-y-6">
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold text-slate-900">Blacklists</h1>
+          <p className="text-slate-500">Manage and upload regulatory blacklists.</p>
+        </div>
+        <button 
+          onClick={() => setIsAddOpen(true)}
+          className="flex items-center gap-2 bg-[#031124] hover:bg-slate-800 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+        >
+          <Plus size={18} /> Add New Blacklist
+        </button>
+      </div>
+
+      <BlacklistsTable 
+        data={filteredData} 
+        currentFilter={filterStatus}
+        onFilterChange={setFilterStatus}
+        onEdit={setEditingItem} 
+        onDelete={deleteBlacklist} 
+      />
+
+      {isAddOpen && (
+        <AddBlacklistModal 
+          onClose={() => setIsAddOpen(false)} 
+          onSave={addBlacklist} 
+        />
+      )}
+      
+      {editingItem && (
+        <EditBlacklistModal 
+          item={editingItem} 
+          onClose={() => setEditingItem(null)} 
+          onSave={updateBlacklist} 
+        />
+      )}
+    </div>
+  );
+};
+
+export default Blacklists;
+
+
+Group ID 
+Name 6 
+Name 1 
+Name 2 
+Name 3 
+Name 4 
+Name 5 
+ 
+Title  
+Name Non-Latin Script 
+Non-Latin Script Type 
+Non-Latin Script Language
+DOB 
+Town of birth 
+Country of birth 
+
+
+Nationality(/ies) 
+Passport Number 
+Passport Details
+National Identification Number
+National Identification Details 
+Address 1 
+Address 2 
+Address 3 
+Address 4 
+Address 5 
+Address 6 
+Post/Zip Code 
+Country 
+Other Information 
+
+Group Type 
+Alias Type 
+Alias Quality 
+Regime 
+
+Listed On 
+UK Sanctions List Date Designated 
+
+Last Updated 
