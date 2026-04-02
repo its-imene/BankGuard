@@ -1,22 +1,26 @@
 import React, { useState } from "react";
 import { Edit2, Trash2, Search, Check, Filter } from "lucide-react";
 
-const ROLES = ["all", "Admin", "Verification", "Data entry"];
+const ROLES = ["all", "SUPER_ADMIN", "ADMIN", "COMPLIANCE", "ACCOUNTS", "AUDITOR", "ANALYST", "VERIFICATION", "DATA_ENTRY"];
 
 const getRolePill = (role) => {
-  switch (role?.toLowerCase()) {
-    case "admin":        return "bg-purple-100 text-purple-500 border border-purple-200";
-    case "verification": return "bg-sky-100 text-sky-500 border border-sky-200";
-    case "data entry":   return "bg-emerald-100 text-emerald-600 border border-emerald-200";
+  switch (role?.toUpperCase()) {
+    case "SUPER_ADMIN":  return "bg-indigo-100 text-indigo-700 border border-indigo-200";
+    case "ADMIN":        return "bg-purple-100 text-purple-700 border border-purple-200";
+    case "COMPLIANCE":   return "bg-orange-100 text-orange-700 border border-orange-200";
+    case "ACCOUNTS":     return "bg-blue-100 text-blue-700 border border-blue-200";
+    case "AUDITOR":      return "bg-rose-100 text-rose-700 border border-rose-200";
+    case "ANALYST":      return "bg-amber-100 text-amber-700 border border-amber-200";
+    case "VERIFICATION": return "bg-sky-100 text-sky-700 border border-sky-200";
+    case "DATA_ENTRY":   return "bg-emerald-100 text-emerald-700 border border-emerald-200";
     default:             return "bg-slate-100 text-slate-500 border border-slate-200";
   }
 };
 
-// Fixed: active = green, inactive = slate grey
-const getStatusBadge = (status) => {
-  if (status === "active")
+const getStatusBadge = (isConfirmed) => {
+  if (isConfirmed)
     return "bg-emerald-500 text-white";
-  return "bg-slate-400 text-white"; // inactive
+  return "bg-slate-400 text-white"; // inactive / pending
 };
 
 const AVATAR_COLORS = [
@@ -27,7 +31,7 @@ const AVATAR_COLORS = [
   "bg-violet-50 text-violet-500 border border-violet-200",
 ];
 const getAvatarStyle = (name = "") => AVATAR_COLORS[name.charCodeAt(0) % AVATAR_COLORS.length];
-const getInitials    = (name = "") => name.split(" ").map(w => w[0]).slice(0, 2).join("").toUpperCase();
+const getInitials    = (firstName = "", lastName = "") => `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
 
 const UsersTable = ({ users, onDeleteRequest, onEditRequest }) => {
   const [search, setSearch]         = useState("");
@@ -35,10 +39,12 @@ const UsersTable = ({ users, onDeleteRequest, onEditRequest }) => {
   const [roleOpen, setRoleOpen]     = useState(false);
 
   const displayed = users.filter(u => {
+    const fullName = `${u.firstName} ${u.lastName}`.toLowerCase();
     const mr = roleFilter === "all" || u.role === roleFilter;
     const mq = !search ||
-      u.name.toLowerCase().includes(search.toLowerCase()) ||
-      u.role.toLowerCase().includes(search.toLowerCase());
+      fullName.includes(search.toLowerCase()) ||
+      u.role.toLowerCase().includes(search.toLowerCase()) ||
+      u.email?.toLowerCase().includes(search.toLowerCase());
     return mr && mq;
   });
 
@@ -99,10 +105,10 @@ const UsersTable = ({ users, onDeleteRequest, onEditRequest }) => {
                 {/* Name */}
                 <td className="px-6 py-4">
                   <div className="flex items-center gap-3">
-                    <div className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${getAvatarStyle(user.name)}`}>
-                      {getInitials(user.name)}
+                    <div className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${getAvatarStyle(user.firstName)}`}>
+                      {getInitials(user.firstName, user.lastName)}
                     </div>
-                    <span className="font-semibold text-slate-800 text-sm">{user.name}</span>
+                    <span className="font-semibold text-slate-800 text-sm">{user.firstName} {user.lastName}</span>
                   </div>
                 </td>
 
@@ -115,9 +121,9 @@ const UsersTable = ({ users, onDeleteRequest, onEditRequest }) => {
 
                 {/* Status */}
                 <td className="px-6 py-4 text-center">
-                  <span className={`inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full ${getStatusBadge(user.status)}`}>
+                  <span className={`inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full ${getStatusBadge(user.isConfirmed)}`}>
                     <span className="w-1.5 h-1.5 rounded-full bg-white opacity-80" />
-                    {user.status.charAt(0).toUpperCase() + user.status.slice(1)}
+                    {user.isConfirmed ? "Active" : "Pending"}
                   </span>
                 </td>
 

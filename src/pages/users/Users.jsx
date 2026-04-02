@@ -3,6 +3,7 @@ import { CheckCircle2, Trash2 } from "lucide-react";
 import UsersTable from "./components/UsersTable";
 import AddUserModal from "./components/AddUserModal";
 import EditUserModal from "./components/EditUserModal";
+import userService from "../../services/userService";
 
 // ── Delete confirmation modal ──────────────────────────────────
 function DeleteModal({ user, onConfirm, onCancel }) {
@@ -18,7 +19,7 @@ function DeleteModal({ user, onConfirm, onCancel }) {
         <h3 className="text-center text-slate-800 font-bold text-base mb-1">Delete this user?</h3>
         <p className="text-center text-slate-500 text-sm mb-6">
           You are about to delete{" "}
-          <span className="font-semibold text-slate-700">{user.name}</span>.
+          <span className="font-semibold text-slate-700">{user.firstName} {user.lastName}</span>.
           <br />This action cannot be undone.
         </p>
         <div className="flex gap-3">
@@ -53,28 +54,61 @@ function Toast({ message, onDone }) {
 // ── Page ───────────────────────────────────────────────────────
 export default function Users() {
   const [users, setUsers]                 = useState([]);
+  const [isLoading, setIsLoading]         = useState(true);
   const [showAddModal, setShowAddModal]   = useState(false);
   const [editingUser, setEditingUser]     = useState(null);
   const [pendingDelete, setPendingDelete] = useState(null);
   const [toast, setToast]                 = useState(null);
 
-  const handleAddUser = (newUser) => {
-    setUsers(prev => [...prev, { ...newUser, id: Date.now() }]);
-    setShowAddModal(false);
-    setToast(`${newUser.name} was added successfully`);
+  useEffect(() => {
+    fetchUsers();
+  }, []);
+
+  const fetchUsers = async () => {
+    setIsLoading(true);
+    try {
+      const data = await userService.getUsers();
+      setUsers(data);
+    } catch (err) {
+      console.error("Failed to fetch users", err);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleEditSave = (updatedUser) => {
-    setUsers(prev => prev.map(u => u.id === updatedUser.id ? updatedUser : u));
-    setEditingUser(null);
-    setToast(`${updatedUser.name} was updated successfully`);
+  const handleAddUser = async (newUser) => {
+    try {
+      await userService.createUser(newUser);
+      await fetchUsers();
+      setShowAddModal(false);
+      setToast(`${newUser.firstName} was invited successfully`);
+    } catch (err) {
+      console.error("Failed to invite user", err);
+    }
   };
 
-  const handleDeleteConfirm = () => {
-    const name = pendingDelete.name;
-    setUsers(prev => prev.filter(u => u.id !== pendingDelete.id));
-    setPendingDelete(null);
-    setToast(`${name} was deleted`);
+  const handleEditSave = async (updatedUser) => {
+    const { id, ...payload } = updatedUser;
+    try {
+      await userService.updateUser(id, payload);
+      await fetchUsers();
+      setEditingUser(null);
+      setToast(`${updatedUser.firstName} was updated successfully`);
+    } catch (err) {
+      console.error("Failed to update user", err);
+    }
+  };
+
+  const handleDeleteConfirm = async () => {
+    const name = `${pendingDelete.firstName} ${pendingDelete.lastName}`;
+    try {
+      await userService.deleteUser(pendingDelete.id);
+      await fetchUsers();
+      setPendingDelete(null);
+      setToast(`${name} was deleted`);
+    } catch (err) {
+      console.error("Failed to delete user", err);
+    }
   };
 
   return (

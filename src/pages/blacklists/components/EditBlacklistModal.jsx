@@ -1,119 +1,152 @@
-import React, { useState, useEffect } from 'react';
-import { X, CloudUpload } from 'lucide-react';
+import React, { useState } from 'react';
+import { X, CloudUpload, Shield, FileText } from 'lucide-react';
+
+const STATUSES = [
+  { value: 'READY',      label: 'Ready'      },
+  { value: 'VALID',      label: 'Valid'       },
+  { value: 'ERRONEOUS',  label: 'Erroneous'  },
+  { value: 'PROCESSING', label: 'Processing' },
+];
+
+const FormRow = ({ label, children }) => (
+  <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-4">
+    <label className="sm:w-28 text-xs font-bold text-slate-600 shrink-0">{label}</label>
+    <div className="flex-1">{children}</div>
+  </div>
+);
+
+const inputCls = `w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-medium
+  outline-none focus:border-[#031124] focus:ring-2 focus:ring-[#031124]/10 transition-all
+  bg-white text-slate-800 placeholder:text-slate-400`;
 
 const EditBlacklistModal = ({ item, onClose, onSave }) => {
-  // Initialize state with the existing item data
   const [formData, setFormData] = useState({
-    source: item?.source || '',
+    source:  item?.source  || '',
     version: item?.version || '',
-    status: item?.status || 'ready',
-    id: item?.id
+    status:  item?.status  || 'READY',
+    id:      item?.id,
   });
-  
   const [selectedFile, setSelectedFile] = useState(null);
+  const [isDragging, setIsDragging]     = useState(false);
 
-  const handleFileChange = (e) => {
-    if (e.target.files && e.target.files[0]) {
-      setSelectedFile(e.target.files[0]);
-    }
+  const setField = (k, v) => setFormData(p => ({ ...p, [k]: v }));
+
+  const handleFile = (file) => { if (file) setSelectedFile(file); };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setIsDragging(false);
+    handleFile(e.dataTransfer.files[0]);
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    
     onSave({
-      ...item, // Keep existing fields like 'date' or 'entries'
-      source: formData.source,
-      version: formData.version,
-      status: formData.status,
-      // Update file info only if a new one was selected
-      fileName: selectedFile ? selectedFile.name : item.fileName,
-      fileObject: selectedFile ? selectedFile.selectedFile : item.fileObject
+      ...item,
+      source:     formData.source,
+      version:    formData.version,
+      status:     formData.status,
+      fileName:   selectedFile ? selectedFile.name     : item.fileName,
+      fileObject: selectedFile ? selectedFile          : item.fileObject,
     });
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-      <div className="bg-white rounded-4xl shadow-2xl w-full max-w-lg overflow-hidden p-8">
-        
-        <div className="flex justify-between items-start mb-1">
-          <div>
-            <h3 className="text-xl font-bold text-[#031124]">Edit Blacklist</h3>
-            <p className="text-[#64748b] text-[11px] mt-0.5">Modify the details of this regulatory blacklist.</p>
-          </div>
-          <button onClick={onClose} className="text-[#64748b] hover:text-slate-900 transition-colors">
-            <X size={20} />
-          </button>
-        </div>
-        
-        <form onSubmit={handleSubmit} className="mt-8 space-y-5">
-          {/* Source Row */}
-          <div className="flex items-center">
-            <label className="w-24 text-right text-xs font-bold text-slate-700 mr-6">Source</label>
-            <input 
-              required
-              value={formData.source}
-              onChange={(e) => setFormData({...formData, source: e.target.value})}
-              className="flex-1 border-2  border-slate-200  rounded-xl px-4 py-2.5 text-sm font-medium outline-none"
-            />
-          </div>
-
-          {/* Version Row */}
-          <div className="flex items-center">
-            <label className="w-24 text-right text-xs font-bold text-slate-700 mr-6">Version</label>
-            <input 
-              required
-              value={formData.version}
-              onChange={(e) => setFormData({...formData, version: e.target.value})}
-              className="flex-1 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-medium outline-none"
-            />
-          </div>
-
-          {/* Status Row */}
-          <div className="flex items-center">
-            <label className="w-24 text-right text-xs font-bold text-slate-700 mr-6">Status</label>
-            <select 
-              value={formData.status}
-              onChange={(e) => setFormData({...formData, status: e.target.value})}
-              className="flex-1 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-medium outline-none bg-white cursor-pointer"
-            >
-              <option value="ready">Ready</option>
-              <option value="valid">Valid</option>
-              <option value="erroneous">Erroneous</option>
-              <option value="processing">Processing</option>
-            </select>
-          </div>
-
-          {/* Document Row (Optional Update) */}
-          <div className="flex items-start">
-            <label className="w-24 text-right text-xs font-bold text-slate-700 mt-4 mr-6">Document</label>
-            <div className="flex-1">
-              <label className="relative flex flex-col items-center justify-center w-full h-36 border-2 border-dashed border-blue-100 rounded-3xl bg-white hover:bg-slate-50 transition-all cursor-pointer">
-                <div className="flex flex-col items-center justify-center text-center p-4">
-                  <CloudUpload className={`mb-2 ${selectedFile ? 'text-emerald-500' : 'text-[#3b82f6] opacity-40'}`} size={32} />
-                  <p className="text-[#3b82f6] font-bold text-xs">
-                    {selectedFile ? "New File Selected" : "Click to replace document"}
-                  </p>
-                  <p className="text-[#3b82f6] opacity-60 text-[9px] mt-1 font-medium truncate max-w-45">
-                    {selectedFile ? selectedFile.name : (item.fileName || "Current document")}
-                  </p>
-                </div>
-                <input type="file" className="hidden" onChange={handleFileChange} />
-              </label>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden">
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-5 border-b border-slate-50">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-amber-500 flex items-center justify-center">
+              <Shield size={17} className="text-white" />
+            </div>
+            <div>
+              <h3 className="text-base font-bold text-slate-900">Edit Blacklist</h3>
+              <p className="text-[10px] text-slate-400 font-medium">Modify this regulatory blacklist's details</p>
             </div>
           </div>
-          
-          <div className="pt-2 flex justify-end gap-3">
-            <button 
+          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:bg-slate-50 transition-colors">
+            <X size={16} />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
+          <FormRow label="Source">
+            <input
+              className={inputCls}
+              required
+              value={formData.source}
+              onChange={e => setField('source', e.target.value)}
+              placeholder="e.g. CTRF"
+            />
+          </FormRow>
+
+          <FormRow label="Version">
+            <input
+              className={inputCls}
+              required
+              value={formData.version}
+              onChange={e => setField('version', e.target.value)}
+              placeholder="e.g. BL-2024-001"
+            />
+          </FormRow>
+
+          <FormRow label="Status">
+            <select
+              className={inputCls + ' cursor-pointer'}
+              value={formData.status}
+              onChange={e => setField('status', e.target.value)}
+            >
+              {STATUSES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+            </select>
+          </FormRow>
+
+          {/* Drop zone */}
+          <FormRow label="Document">
+            <label
+              className={`flex flex-col items-center justify-center w-full h-28 border-2 border-dashed rounded-xl cursor-pointer transition-all ${
+                isDragging
+                  ? 'border-amber-400 bg-amber-50/40'
+                  : selectedFile
+                  ? 'border-emerald-300 bg-emerald-50/40'
+                  : 'border-slate-200 bg-slate-50/50 hover:border-slate-300 hover:bg-slate-50'
+              }`}
+              onDragOver={e => { e.preventDefault(); setIsDragging(true); }}
+              onDragLeave={() => setIsDragging(false)}
+              onDrop={handleDrop}
+            >
+              {selectedFile ? (
+                <div className="flex items-center gap-3 text-emerald-600 px-4">
+                  <FileText size={22} className="shrink-0" />
+                  <div>
+                    <p className="text-sm font-bold truncate max-w-[200px]">{selectedFile.name}</p>
+                    <p className="text-xs text-emerald-500">Click to replace</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center px-4">
+                  <CloudUpload size={24} className="text-slate-300 mx-auto mb-1.5" strokeWidth={1.5} />
+                  <p className="text-xs font-semibold text-slate-500">
+                    {item?.fileName ? `Current: ${item.fileName}` : 'Drop to replace document'}
+                  </p>
+                  <p className="text-[10px] text-slate-400 mt-0.5">Excel, XML, HMT or PDF</p>
+                </div>
+              )}
+              <input type="file" className="hidden" onChange={e => handleFile(e.target.files[0])} />
+            </label>
+          </FormRow>
+
+          <div className="flex gap-3 pt-1">
+            <button
               type="button"
               onClick={onClose}
-              className="px-6 py-2.5 border border-slate-200 text-slate-600 rounded-xl text-sm font-bold hover:bg-slate-50 transition-all"
+              className="flex-1 py-2.5 border border-slate-200 text-slate-600 rounded-xl text-sm font-semibold hover:bg-slate-50 transition-colors"
             >
               Cancel
             </button>
-            <button 
-              type="submit" 
-              className="px-6 py-2.5 bg-[#031124] text-white rounded-xl text-sm font-bold hover:bg-slate-800 transition-all shadow-md"
+            <button
+              type="submit"
+              className="flex-1 py-2.5 bg-[#031124] text-white rounded-xl text-sm font-bold hover:bg-slate-800 transition-all shadow-lg"
             >
               Save Changes
             </button>

@@ -11,15 +11,10 @@ import Distribution from "./pages/distribution/Distribution";
 import AuditLogs from "./pages/audit/Audit";
 import Settings from "./pages/Settings";
 import Login from './pages/auth/Login';
-import Otp from './pages/auth/OTP';
 import ForgotPassword from './pages/auth/ForgotPassword';
+import { AuthProvider } from "./context/AuthContext";
 
-// 🛡️ The Gatekeeper: This checks login status on every single navigation
-const ProtectedRoute = ({ children }) => {
-  // Switch from localStorage to sessionStorage
-  const auth = sessionStorage.getItem("isAuthenticated") === "true";
-  return auth ? children : <Navigate to="/login" replace />;
-};
+import ProtectedRoute from "./components/layout/ProtectedRoute";
 
 const router = createBrowserRouter([
   { 
@@ -27,7 +22,6 @@ const router = createBrowserRouter([
     element: <Navigate to="/app/blacklists" replace /> 
   },
   { path: "/login", element: <Login /> },
-  { path: "/otp", element: <Otp /> },
   { path: "/forgot-password", element: <ForgotPassword /> },
 
   {
@@ -53,6 +47,8 @@ const router = createBrowserRouter([
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
-    <RouterProvider router={router} />
+    <AuthProvider>
+      <RouterProvider router={router} />
+    </AuthProvider>
   </React.StrictMode>
 );

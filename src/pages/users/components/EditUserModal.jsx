@@ -2,32 +2,39 @@ import React, { useState } from "react";
 import { X } from "lucide-react";
 
 const EditUserModal = ({ user, onSave, onClose }) => {
-  // Pre-fill form with existing user data
-  const nameParts = user.name.split(" ");
   const [form, setForm] = useState({
-    firstName: nameParts[0] || "",
-    lastName:  nameParts.slice(1).join(" ") || "",
-    userId:    user.userId || "",
-    email:     user.email  || "",
-    role:      user.role   || "Admin",
-    password:  "",
-    status:    user.status || "active",
+    firstName: user.firstName || "",
+    lastName:  user.lastName  || "",
+    userId:    user.id        || "",
+    email:     user.email     || "",
+    role:      user.role      || "COMPLIANCE",
+    status:    user.isConfirmed ? "active" : "inactive",
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    onSave({
-      ...user,
-      name:   `${form.firstName} ${form.lastName}`,
-      role:   form.role,
-      status: form.status,
-      userId: form.userId,
-      email:  form.email,
-    });
+    setIsSubmitting(true);
+    try {
+      // Send clean payload to backend
+      await onSave({
+        id: user.id,
+        firstName:   form.firstName,
+        lastName:    form.lastName,
+        role:        form.role,
+        isConfirmed: form.status === "active",
+        email:       form.email,
+      });
+      onClose();
+    } catch (err) {
+      console.error("Failed to update user", err);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -81,48 +88,46 @@ const EditUserModal = ({ user, onSave, onClose }) => {
             <div className="flex-1 grid grid-cols-2 gap-x-6 gap-y-4">
 
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">First Name</label>
-                <input name="firstName" value={form.firstName} onChange={handleChange} required
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-300 text-slate-600 placeholder-slate-300" />
+                <label className="block text-sm font-medium text-slate-700 mb-1 leading-tight">First Name</label>
+                <input name="firstName" value={form.firstName} readOnly
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm bg-slate-50 text-slate-500 cursor-not-allowed outline-none focus:ring-0" />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">User ID</label>
-                <input name="userId" value={form.userId} onChange={handleChange}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-300 text-slate-600 placeholder-slate-300" />
+                <label className="block text-sm font-medium text-slate-700 mb-1 leading-tight">User ID</label>
+                <input name="userId" value={form.userId} readOnly
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm bg-slate-50 text-slate-500 cursor-not-allowed outline-none focus:ring-0" />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Last Name</label>
-                <input name="lastName" value={form.lastName} onChange={handleChange} required
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-300 text-slate-600 placeholder-slate-300" />
+                <label className="block text-sm font-medium text-slate-700 mb-1 leading-tight">Last Name</label>
+                <input name="lastName" value={form.lastName} readOnly
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm bg-slate-50 text-slate-500 cursor-not-allowed outline-none focus:ring-0" />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Email</label>
-                <input name="email" type="email" value={form.email} onChange={handleChange} required
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-300 text-slate-600 placeholder-slate-300" />
+                <label className="block text-sm font-medium text-slate-700 mb-1 leading-tight">Email</label>
+                <input name="email" type="email" value={form.email} readOnly
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm bg-slate-50 text-slate-500 cursor-not-allowed outline-none focus:ring-0" />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Role</label>
+                <label className="block text-sm font-medium text-slate-700 mb-1 leading-tight">Role</label>
                 <select name="role" value={form.role} onChange={handleChange}
                   className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-300 bg-white text-slate-600">
-                  <option value="Admin">Admin</option>
-                  <option value="Verification">Verification</option>
-                  <option value="Data entry">Data entry</option>
+                  <option value="SUPER_ADMIN">Super Admin</option>
+                  <option value="ADMIN">Admin</option>
+                  <option value="COMPLIANCE">Compliance Officer</option>
+                  <option value="ACCOUNTS">Accounts</option>
+                  <option value="AUDITOR">Auditor</option>
+                  <option value="ANALYST">Analyst</option>
+                  <option value="VERIFICATION">Verification</option>
+                  <option value="DATA_ENTRY">Data Entry</option>
                 </select>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Password</label>
-                <input name="password" type="password" value={form.password} onChange={handleChange}
-                  placeholder="••••••••••"
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-300 placeholder-slate-300" />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Status</label>
+                <label className="block text-sm font-medium text-slate-700 mb-1 leading-tight">Status</label>
                 <select name="status" value={form.status} onChange={handleChange}
                   className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-300 bg-white text-slate-600">
                   <option value="active">active</option>
@@ -131,10 +136,12 @@ const EditUserModal = ({ user, onSave, onClose }) => {
               </div>
 
               {/* Update button */}
-              <div className="flex items-end justify-end">
+              <div className="col-span-2 flex justify-end mt-2">
                 <button type="submit"
-                  className="px-8 py-2 bg-orange-400 hover:bg-orange-500 text-white text-sm font-semibold rounded-lg transition-colors">
-                  update
+                  disabled={isSubmitting}
+                  className="px-8 py-2.5 bg-[#ff5925] hover:bg-[#e04e1e] text-white text-sm font-bold rounded-xl transition-all shadow-lg shadow-[#ff5925]/20 disabled:opacity-50"
+                >
+                  {isSubmitting ? "Updating..." : "Save Changes"}
                 </button>
               </div>
 
