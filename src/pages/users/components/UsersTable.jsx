@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Edit2, Trash2, Search, Check, Filter } from "lucide-react";
+import { Edit2, Trash2, Search, Check, Filter, Link2 } from "lucide-react";
 
 const ROLES = ["all", "SUPER_ADMIN", "ADMIN", "COMPLIANCE", "ACCOUNTS", "AUDITOR", "ANALYST", "VERIFICATION", "DATA_ENTRY"];
 
@@ -33,7 +33,7 @@ const AVATAR_COLORS = [
 const getAvatarStyle = (name = "") => AVATAR_COLORS[name.charCodeAt(0) % AVATAR_COLORS.length];
 const getInitials    = (firstName = "", lastName = "") => `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
 
-const UsersTable = ({ users, onDeleteRequest, onEditRequest }) => {
+const UsersTable = ({ users, onDeleteRequest, onEditRequest, onInviteLinkRequest }) => {
   const [search, setSearch]         = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
   const [roleOpen, setRoleOpen]     = useState(false);
@@ -130,6 +130,14 @@ const UsersTable = ({ users, onDeleteRequest, onEditRequest }) => {
                 {/* Actions */}
                 <td className="px-6 py-4">
                   <div className="flex justify-end gap-2">
+                    {!user.isConfirmed && (
+                      <button
+                        onClick={() => onInviteLinkRequest(user)}
+                        title="Get invite link"
+                        className="p-1.5 text-slate-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition-colors">
+                        <Link2 size={16} />
+                      </button>
+                    )}
                     <button
                       onClick={() => onEditRequest(user)}
                       className="p-1.5 text-slate-400 hover:text-orange-500 hover:bg-orange-50 rounded-lg transition-colors">

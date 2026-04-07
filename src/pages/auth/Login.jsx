@@ -12,6 +12,12 @@ function Login() {
   const [touched, setTouched] = useState(false);
   const [showOtpModal, setShowOtpModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [otpMeta, setOtpMeta] = useState({
+    delivery: 'email',
+    localOtp: '',
+    localOtpExpiresAt: '',
+    warning: ''
+  });
   
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -25,10 +31,21 @@ function Login() {
     setError('');
 
     try {
-      await authService.login(email);
+      const response = await authService.login(email);
+      const payload = response?.data || {};
+      const data = payload?.data && typeof payload.data === 'object' ? payload.data : payload;
+      const normalizedDelivery = String(data.delivery || '').toLowerCase();
+      const isLocalMode = normalizedDelivery === 'local' || Boolean(data.otpCode);
+
+      setOtpMeta({
+        delivery: isLocalMode ? 'local' : 'email',
+        localOtp: isLocalMode ? String(data.otpCode || '') : '',
+        localOtpExpiresAt: isLocalMode ? data.otpExpiresAt || '' : '',
+        warning: isLocalMode ? data.warning || '' : ''
+      });
       setShowOtpModal(true);
     } catch (err) {
-      setError(err.response?.data?.message || "Something went wrong. Please check your email.");
+      setError(err.response?.data?.message || "Unable to send OTP right now. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
@@ -119,6 +136,10 @@ function Login() {
       {showOtpModal && (
         <OtpModal 
           email={email} 
+          delivery={otpMeta.delivery}
+          localOtp={otpMeta.localOtp}
+          localOtpExpiresAt={otpMeta.localOtpExpiresAt}
+          warning={otpMeta.warning}
           onClose={() => setShowOtpModal(false)}
           onVerified={() => {
             setShowOtpModal(false);

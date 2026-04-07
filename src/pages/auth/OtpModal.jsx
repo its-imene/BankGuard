@@ -4,14 +4,25 @@ import { authService } from "../../services/authService";
 import { useAuth } from "../../hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 
-const OtpModal = ({ email, onClose, onVerified }) => {
+const OtpModal = ({
+  email,
+  onClose,
+  onVerified,
+  localOtp,
+  localOtpExpiresAt,
+  delivery = "email",
+  warning,
+}) => {
   const [digits, setDigits] = useState(Array(6).fill(""));
   const [error, setError] = useState("");
   const [timer, setTimer] = useState(300);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [copyMessage, setCopyMessage] = useState("");
   const inputRefs = useRef([]);
   const { login } = useAuth();
   const navigate = useNavigate();
+
+  const isLocalDelivery = delivery === "local" || Boolean(localOtp);
 
   useEffect(() => {
     if (inputRefs.current[0]) {
@@ -98,9 +109,21 @@ const OtpModal = ({ email, onClose, onVerified }) => {
       setTimer(300);
       setDigits(Array(6).fill(""));
       setError("");
+      setCopyMessage("");
       inputRefs.current[0]?.focus();
     } catch (err) {
       setError("Failed to resend code");
+    }
+  };
+
+  const handleCopyCode = async () => {
+    if (!localOtp) return;
+
+    try {
+      await navigator.clipboard.writeText(localOtp);
+      setCopyMessage("Code copied");
+    } catch (err) {
+      setCopyMessage("Copy failed");
     }
   };
 
@@ -116,8 +139,44 @@ const OtpModal = ({ email, onClose, onVerified }) => {
 
         <div className="text-center mb-8">
           <p className="text-slate-600 text-sm mb-6">
-            Enter the 6-digit code sent to <span className="font-semibold text-[#031124]">{email}</span>
+            {isLocalDelivery ? (
+              <>
+                Enter the 6-digit code generated for <span className="font-semibold text-[#031124]">{email}</span>
+              </>
+            ) : (
+              <>
+                Enter the 6-digit code sent to <span className="font-semibold text-[#031124]">{email}</span>
+              </>
+            )}
           </p>
+
+          {isLocalDelivery && (
+            <div className="mb-6 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-left">
+              <p className="text-xs font-semibold uppercase tracking-wide text-amber-800">
+                Local Development Mode
+              </p>
+              <p className="mt-1 text-xs text-amber-900">
+                {warning || "Email delivery is disabled. Use this code for verification."}
+              </p>
+              <div className="mt-2 flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-[11px] text-amber-700">OTP code</p>
+                  <p className="font-mono text-lg font-bold tracking-[0.2em] text-amber-900">{localOtp || "------"}</p>
+                  {localOtpExpiresAt && (
+                    <p className="text-[11px] text-amber-700">Expires at: {new Date(localOtpExpiresAt).toLocaleTimeString()}</p>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={handleCopyCode}
+                  className="rounded-lg border border-amber-300 bg-white px-3 py-2 text-xs font-semibold text-amber-900 hover:bg-amber-100 transition-colors"
+                >
+                  Copy Code
+                </button>
+              </div>
+              {copyMessage && <p className="mt-2 text-[11px] font-medium text-amber-800">{copyMessage}</p>}
+            </div>
+          )}
 
           <div className="flex justify-center space-x-2 mb-6">
             {digits.map((digit, index) => (

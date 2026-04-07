@@ -16,6 +16,11 @@ export const userService = {
     return response.data;
   },
 
+  getInviteLink: async (id) => {
+    const response = await api.get(`/user/${id}/invite-link`);
+    return response.data;
+  },
+
   deleteUser: async (id) => {
     const response = await api.delete(`/user/${id}`);
     return response.data;

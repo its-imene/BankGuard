@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { CheckCircle2, Trash2 } from "lucide-react";
+import { CheckCircle2, Trash2, AlertCircle, Copy, ExternalLink, Link2 } from "lucide-react";
 import UsersTable from "./components/UsersTable";
 import AddUserModal from "./components/AddUserModal";
 import EditUserModal from "./components/EditUserModal";
@@ -38,15 +38,105 @@ function DeleteModal({ user, onConfirm, onCancel }) {
 }
 
 // ── Toast ──────────────────────────────────────────────────────
-function Toast({ message, onDone }) {
+function Toast({ message, type = "success", onDone }) {
   useEffect(() => {
     const t = setTimeout(onDone, 2800);
     return () => clearTimeout(t);
   }, []);
+
+  const styles = type === "error"
+    ? {
+        wrapper: "bg-red-900",
+        icon: <AlertCircle size={17} className="text-red-300 flex-shrink-0" />,
+      }
+    : {
+        wrapper: "bg-slate-800",
+        icon: <CheckCircle2 size={17} className="text-emerald-400 flex-shrink-0" />,
+      };
+
   return (
-    <div className="fixed bottom-6 right-6 z-50 flex items-center gap-3 bg-slate-800 text-white text-sm px-5 py-3 rounded-xl shadow-xl">
-      <CheckCircle2 size={17} className="text-emerald-400 flex-shrink-0" />
+    <div className={`fixed bottom-6 right-6 z-50 flex items-center gap-3 ${styles.wrapper} text-white text-sm px-5 py-3 rounded-xl shadow-xl`}>
+      {styles.icon}
       <span>{message}</span>
+    </div>
+  );
+}
+
+function InviteLinkModal({ data, onCopy, onOpen, onClose }) {
+  if (!data) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
+      <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-2xl overflow-hidden">
+        <div className="flex items-center justify-between px-8 py-5 border-b border-slate-100">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center">
+              <Link2 size={18} className="text-blue-600" />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-slate-900">Invite Link</h2>
+              <p className="text-sm text-slate-500">
+                {data.userName ? `Access link for ${data.userName}` : "Use this link to complete account setup."}
+              </p>
+            </div>
+          </div>
+          <button onClick={onClose} className="p-1.5 hover:bg-slate-100 rounded-full text-slate-400 hover:text-slate-600">
+            <Trash2 size={0} className="hidden" />
+            <span className="text-xl leading-none">×</span>
+          </button>
+        </div>
+
+        <div className="px-8 py-6 space-y-4">
+          <div>
+            <label className="block text-sm font-semibold text-slate-700 mb-2">Invite URL</label>
+            <textarea
+              readOnly
+              value={data.inviteUrl}
+              rows={3}
+              className="w-full px-4 py-3 border border-slate-200 rounded-xl bg-slate-50 text-slate-700 text-sm outline-none resize-none"
+            />
+          </div>
+
+          {data.invitationDelivery && (
+            <p className="text-xs text-slate-500">
+              Delivery mode: <span className="font-semibold text-slate-700">{data.invitationDelivery}</span>
+            </p>
+          )}
+
+          {data.invitationWarning && (
+            <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+              <AlertCircle size={16} className="mt-0.5 flex-shrink-0" />
+              <span>{data.invitationWarning}</span>
+            </div>
+          )}
+
+          <div className="flex justify-end gap-3">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-6 py-3 border border-slate-200 text-slate-600 font-bold rounded-xl hover:bg-slate-50 transition-all"
+            >
+              Close
+            </button>
+            <button
+              type="button"
+              onClick={onOpen}
+              className="flex items-center gap-2 px-6 py-3 border border-slate-200 text-slate-700 font-bold rounded-xl hover:bg-slate-50 transition-all"
+            >
+              <ExternalLink size={16} />
+              Open Link
+            </button>
+            <button
+              type="button"
+              onClick={onCopy}
+              className="flex items-center gap-2 px-6 py-3 bg-[#031124] text-white font-bold rounded-xl hover:bg-slate-800 transition-all"
+            >
+              <Copy size={16} />
+              Copy Link
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
@@ -59,6 +149,7 @@ export default function Users() {
   const [editingUser, setEditingUser]     = useState(null);
   const [pendingDelete, setPendingDelete] = useState(null);
   const [toast, setToast]                 = useState(null);
+  const [inviteLinkData, setInviteLinkData] = useState(null);
 
   useEffect(() => {
     fetchUsers();
@@ -78,12 +169,25 @@ export default function Users() {
 
   const handleAddUser = async (newUser) => {
     try {
-      await userService.createUser(newUser);
+      const response = await userService.createUser(newUser);
       await fetchUsers();
       setShowAddModal(false);
-      setToast(`${newUser.firstName} was invited successfully`);
+
+      if (response?.inviteUrl) {
+        setInviteLinkData({
+          inviteUrl: response.inviteUrl,
+          invitationDelivery: response.invitationDelivery,
+          invitationWarning: response.invitationWarning,
+          userName: `${response.firstName || newUser.firstName} ${response.lastName || newUser.lastName}`,
+        });
+        setToast({ type: "success", message: "User created. Copy the invite link." });
+      } else {
+        setToast({ type: "success", message: `${newUser.firstName} was created successfully` });
+      }
     } catch (err) {
       console.error("Failed to invite user", err);
+      setToast({ type: "error", message: "Failed to create user" });
+      throw err;
     }
   };
 
@@ -93,9 +197,10 @@ export default function Users() {
       await userService.updateUser(id, payload);
       await fetchUsers();
       setEditingUser(null);
-      setToast(`${updatedUser.firstName} was updated successfully`);
+      setToast({ type: "success", message: `${updatedUser.firstName} was updated successfully` });
     } catch (err) {
       console.error("Failed to update user", err);
+      setToast({ type: "error", message: "Failed to update user" });
     }
   };
 
@@ -105,9 +210,42 @@ export default function Users() {
       await userService.deleteUser(pendingDelete.id);
       await fetchUsers();
       setPendingDelete(null);
-      setToast(`${name} was deleted`);
+      setToast({ type: "success", message: `${name} was deleted` });
     } catch (err) {
       console.error("Failed to delete user", err);
+      setToast({ type: "error", message: "Failed to delete user" });
+    }
+  };
+
+  const handleCopyInviteLink = async () => {
+    if (!inviteLinkData?.inviteUrl) return;
+
+    try {
+      await navigator.clipboard.writeText(inviteLinkData.inviteUrl);
+      setToast({ type: "success", message: "Invite link copied to clipboard" });
+    } catch (err) {
+      console.error("Failed to copy invite link", err);
+      setToast({ type: "error", message: "Failed to copy invite link" });
+    }
+  };
+
+  const handleOpenInviteLink = () => {
+    if (!inviteLinkData?.inviteUrl) return;
+    window.open(inviteLinkData.inviteUrl, "_blank", "noopener,noreferrer");
+  };
+
+  const handleInviteLinkRequest = async (user) => {
+    try {
+      const response = await userService.getInviteLink(user.id);
+      setInviteLinkData({
+        inviteUrl: response.inviteUrl,
+        invitationDelivery: response.invitationDelivery,
+        invitationWarning: response.invitationWarning,
+        userName: `${user.firstName} ${user.lastName}`,
+      });
+    } catch (err) {
+      console.error("Failed to fetch invite link", err);
+      setToast({ type: "error", message: "Failed to fetch invite link" });
     }
   };
 
@@ -136,6 +274,7 @@ export default function Users() {
         users={users}
         onDeleteRequest={(user) => setPendingDelete(user)}
         onEditRequest={(user) => setEditingUser(user)}
+        onInviteLinkRequest={handleInviteLinkRequest}
       />
 
       {/* Add modal */}
@@ -164,8 +303,15 @@ export default function Users() {
         />
       )}
 
+      <InviteLinkModal
+        data={inviteLinkData}
+        onCopy={handleCopyInviteLink}
+        onOpen={handleOpenInviteLink}
+        onClose={() => setInviteLinkData(null)}
+      />
+
       {/* Toast */}
-      {toast && <Toast message={toast} onDone={() => setToast(null)} />}
+      {toast && <Toast type={toast.type} message={toast.message} onDone={() => setToast(null)} />}
     </div>
   );
 }
