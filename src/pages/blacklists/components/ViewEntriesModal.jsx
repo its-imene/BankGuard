@@ -4,6 +4,7 @@ import {
   Paperclip, Upload, Loader2, CheckCircle2, XCircle,
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
+import { API_BASE_URL } from '../../../services/api';
 import { entriesService }  from '../../../services/entriesService';
 import { documentService } from '../../../services/documentService';
 import { reviewService }   from '../../../services/reviewService';
@@ -41,7 +42,7 @@ const MemoRow = memo(({ row, rowIndex, uploadingId, onFileUpload, onToggleError 
           <input type="file" className="hidden" onChange={e => onFileUpload(row.id, e.target.files[0])} disabled={uploadingId === row.id} />
         </label>
         {row.evidenceDocuments?.map((doc, i) => (
-          <a key={i} href={`http://localhost:3000${doc.storagePath}`} target="_blank" rel="noreferrer"
+          <a key={i} href={`${API_BASE_URL}${doc.storagePath}`} target="_blank" rel="noreferrer"
             className="text-slate-300 hover:text-blue-500 transition-colors" title={doc.originalName}>
             <Paperclip size={12} />
           </a>
