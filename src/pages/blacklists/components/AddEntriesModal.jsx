@@ -133,7 +133,7 @@ const AddEntriesModal = ({ onClose, onSave, initialData }) => {
         .catch(err => console.error('Failed to load entries', err))
         .finally(() => setIsLoading(false));
     }
-    if (initialData?.status === 'erroneous') {
+    if (String(initialData?.status || '').toUpperCase() === 'ERRONEOUS') {
       reviewService.getReviews().then(reviews => {
         const latest = reviews.filter(r => r.sanctionedEntityId === initialData.id)[0];
         if (latest) setRejectionReason(latest.comment);
@@ -193,7 +193,6 @@ const AddEntriesModal = ({ onClose, onSave, initialData }) => {
         ...initialData,
         blacklistId,
         source,
-        version: blacklistId,
         status: 'READY',
         date: initialData?.date || new Date().toISOString().split('T')[0],
         entriesCount: entries.length,
