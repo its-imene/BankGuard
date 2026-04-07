@@ -121,7 +121,7 @@ const AddUserModal = ({ onSave, onClose }) => {
               disabled={isSubmitting}
               className="px-10 py-3 bg-[#ff5925] text-white font-bold rounded-xl hover:bg-[#e04e1e] transition-all shadow-lg shadow-[#ff5925]/20 disabled:opacity-50"
             >
-              {isSubmitting ? "Sending Invite..." : "Send Invitation"}
+              {isSubmitting ? "Creating..." : "Create User"}
             </button>
           </div>
         </form>

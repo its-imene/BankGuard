@@ -21,10 +21,10 @@ const inputCls = `w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm 
 
 const EditBlacklistModal = ({ item, onClose, onSave }) => {
   const [formData, setFormData] = useState({
-    source:  item?.source  || '',
-    version: item?.version || '',
-    status:  item?.status  || 'READY',
-    id:      item?.id,
+    source: item?.source || '',
+    blacklistId: item?.blacklistId || item?.version || '',
+    status: item?.status || 'READY',
+    id: item?.id,
   });
   const [selectedFile, setSelectedFile] = useState(null);
   const [isDragging, setIsDragging]     = useState(false);
@@ -43,10 +43,10 @@ const EditBlacklistModal = ({ item, onClose, onSave }) => {
     e.preventDefault();
     onSave({
       ...item,
-      source:     formData.source,
-      version:    formData.version,
-      status:     formData.status,
-      fileName:   selectedFile ? selectedFile.name     : item.fileName,
+      source: formData.source,
+      blacklistId: formData.blacklistId,
+      status: formData.status,
+      fileName: selectedFile ? selectedFile.name : item.fileName,
       fileObject: selectedFile ? selectedFile          : item.fileObject,
     });
   };
@@ -81,12 +81,12 @@ const EditBlacklistModal = ({ item, onClose, onSave }) => {
             />
           </FormRow>
 
-          <FormRow label="Version">
+          <FormRow label="Blacklist ID">
             <input
               className={inputCls}
               required
-              value={formData.version}
-              onChange={e => setField('version', e.target.value)}
+              value={formData.blacklistId}
+              onChange={e => setField('blacklistId', e.target.value)}
               placeholder="e.g. BL-2024-001"
             />
           </FormRow>
