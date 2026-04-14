@@ -5,6 +5,7 @@ import {
   User, Building2, Save, Trash2
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
+import { API_BASE_URL } from '../../../services/api';
 import { entriesService }  from '../../../services/entriesService';
 import { documentService } from '../../../services/documentService';
 import { reviewService }   from '../../../services/reviewService';
@@ -405,3 +406,4 @@ const ViewEntriesModal = ({ item, onClose, onUpdateBatch }) => {
 };
 
 export default ViewEntriesModal;
+
