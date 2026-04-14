@@ -36,6 +36,11 @@ export const blacklistService = {
     return response.data;
   },
 
+  importFromUrl: async (url, metadata) => {
+    const response = await api.post('/sanctioned-entity/import-url', { url, ...metadata });
+    return response.data;
+  },
+
   bulkCreateBlacklist: async (payload) => {
     const response = await api.post('/sanctioned-entity/bulk', payload);
     return response.data;

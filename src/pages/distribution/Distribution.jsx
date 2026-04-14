@@ -158,6 +158,8 @@ export default function Distribution() {
   const [filterStatus, setFilterStatus] = useState('ALL');
   const [copiedPayload, setCopiedPayload] = useState(false);
   const [modalTab, setModalTab] = useState('payload'); // 'payload' | 'response' | 'headers'
+  const [autoDistributeEnabled, setAutoDistributeEnabled] = useState(false);
+  const [isSettingLoading, setIsSettingLoading] = useState(false);
 
   const [manualBatchId, setManualBatchId] = useState('');
   const [manualTargetId, setManualTargetId] = useState('');
@@ -194,18 +196,38 @@ export default function Distribution() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [targetsRes, deliveriesRes, blacklistsRes] = await Promise.all([
+      const [targetsRes, deliveriesRes, blacklistsRes, settingsRes] = await Promise.all([
         webhookService.getTargets(),
         webhookService.getDeliveries(),
-        blacklistService.getBlacklists()
+        blacklistService.getBlacklists(),
+        webhookService.getSettings()
       ]);
       setTargets(targetsRes.data || []);
       setDeliveries(deliveriesRes.data || []);
       setBlacklists(blacklistsRes || []);
+      
+      const autoSetting = settingsRes.data?.find(s => s.key === 'AUTO_DISTRIBUTION_ENABLED');
+      if (autoSetting) {
+        setAutoDistributeEnabled(autoSetting.value === 'true');
+      }
     } catch (err) {
       console.error('Failed to fetch distribution data', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const toggleAutoDistribute = async () => {
+    const newValue = !autoDistributeEnabled;
+    setIsSettingLoading(true);
+    try {
+      await webhookService.updateSetting('AUTO_DISTRIBUTION_ENABLED', String(newValue));
+      setAutoDistributeEnabled(newValue);
+      toast.success(`Automatic distribution ${newValue ? 'enabled' : 'disabled'}`);
+    } catch (err) {
+      toast.error('Failed to update system setting');
+    } finally {
+      setIsSettingLoading(false);
     }
   };
 
@@ -319,17 +341,40 @@ export default function Distribution() {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50 p-6">
       <main className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
-        <div className="flex items-start justify-between">
+        <div className="flex items-center justify-between">
           <div>
             <h1 className="text-4xl font-bold text-slate-900">Distribution</h1>
             <p className="text-slate-500 mt-2">Manage external system integrations and data transmission</p>
           </div>
-          <button 
-            onClick={() => { setIsModalOpen(true); setEditingTarget(null); }}
-            className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-lg font-semibold shadow-lg hover:shadow-xl hover:from-orange-600 hover:to-orange-700 transition-all"
-          >
-            <Plus size={20} /> Add Target
-          </button>
+          <div className="flex items-center gap-6">
+            {/* Auto-distribute Toggle */}
+            <div className="flex items-center gap-3 bg-white border border-slate-200 px-4 py-2 rounded-xl shadow-sm">
+              <div className="flex flex-col">
+                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Status</span>
+                <span className="text-sm font-bold text-slate-700">Auto-Distribute</span>
+              </div>
+              <button 
+                onClick={toggleAutoDistribute}
+                disabled={isSettingLoading}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${
+                  autoDistributeEnabled ? 'bg-orange-500' : 'bg-slate-200'
+                } ${isSettingLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+              >
+                <span
+                  className={`${
+                    autoDistributeEnabled ? 'translate-x-6' : 'translate-x-1'
+                  } inline-block h-4 w-4 transform rounded-full bg-white transition-transform`}
+                />
+              </button>
+            </div>
+
+            <button 
+              onClick={() => { setIsModalOpen(true); setEditingTarget(null); }}
+              className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-lg font-semibold shadow-lg hover:shadow-xl hover:from-orange-600 hover:to-orange-700 transition-all"
+            >
+              <Plus size={20} /> Add Target
+            </button>
+          </div>
         </div>
 
         {/* Stats Grid */}

@@ -12,6 +12,7 @@ import AuditLogs from "./pages/audit/Audit";
 import Settings from "./pages/Settings";
 import Login from './pages/auth/Login';
 import ForgotPassword from './pages/auth/ForgotPassword';
+import ConfirmAccount from './pages/auth/ConfirmAccount';
 import { AuthProvider } from "./context/AuthContext";
 
 import ProtectedRoute from "./components/layout/ProtectedRoute";
@@ -22,6 +23,7 @@ const router = createBrowserRouter([
     element: <Navigate to="/app/blacklists" replace /> 
   },
   { path: "/login", element: <Login /> },
+  { path: "/confirm-account", element: <ConfirmAccount /> },
   { path: "/forgot-password", element: <ForgotPassword /> },
 
   {

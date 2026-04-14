@@ -1,15 +1,20 @@
 import React, { useState, useEffect, useRef, memo, useCallback } from 'react';
-import {
-  X, Shield, Trash2, Edit2, Check, Plus,
-  Info, Loader2, AlertCircle, Users, ChevronRight,
+import { 
+  X, Check, Plus, Edit2, Trash2, Shield, Users, 
+  AlertCircle, Loader2, Building2, User as UserIcon, Save,
+  Sparkles, Mic, MicOff, Send
 } from 'lucide-react';
+import toast from 'react-hot-toast';
+import axios from 'axios';
+import { voiceService } from '../../../services/voiceService';
 import { entriesService } from '../../../services/entriesService';
 import { reviewService }  from '../../../services/reviewService';
 
 const ALL_FIELDS = [
   'name1','name2','name3','name4','name5','name6',
   'title','nameNonLatin','nonLatinType','nonLatinLang',
-  'dob','townOfBirth','countryOfBirth','nationality',
+  'entityType','dob','townOfBirth','countryOfBirth','nationality',
+  'registrationNumber', 'registrationCountry', 'incorporationDate', 'industry',
   'passportNum','passportDetails','nationalId','nationalIdDetails',
   'addr1','addr2','addr3','addr4','addr5','addr6',
   'zipCode','country','otherInfo','groupType','aliasType',
@@ -30,27 +35,32 @@ const FIELD_LABELS = {
   aliasQuality:'Alias Quality', regime:'Regime',
   listedOn:'Listed On', ukSanctionsListDate:'UK Sanctions Date',
   lastUpdated:'Last Updated', groupId:'Group ID',
+  registrationNumber: 'Registration No.', registrationCountry: 'Registration Country',
+  incorporationDate: 'Incorp. Date', industry: 'Industry',
 };
 
 const DATE_FIELDS = new Set(['dob','listedOn','ukSanctionsListDate','lastUpdated']);
 
 const TABLE_COLS = [
-  'groupId','name1','name2','name3','name4','name5','name6',
-  'title','dob','nationality','country','regime','listedOn',
+  'entityType','groupId','name1','name2','name3','name4',
+  'registrationNumber','dob','nationality','regime','listedOn',
 ];
 
 /* ─── Single uncontrolled field ─── */
 const Field = ({ fieldKey, inputRef, defaultValue, hasError }) => (
-  <div className="flex flex-col gap-1">
-    <label className={`text-[9px] font-bold uppercase tracking-wider ${hasError ? 'text-red-500' : 'text-slate-400'}`}>
+  <div className="flex flex-col gap-1 group">
+    <label className={`text-[9px] font-bold uppercase tracking-wider transition-colors duration-500 ${
+      hasError ? 'text-red-500' : 'text-slate-400 group-focus-within:text-[#031124]'
+    }`}>
       {FIELD_LABELS[fieldKey] || fieldKey}
       {hasError && <span className="ml-1 text-red-400">· Error</span>}
     </label>
     <input
       ref={inputRef}
+      id={`field-${fieldKey}`}
       type={DATE_FIELDS.has(fieldKey) ? 'date' : 'text'}
       defaultValue={defaultValue || ''}
-      className={`border rounded-lg px-3 py-2 text-xs font-medium outline-none transition-all ${
+      className={`border rounded-lg px-3 py-2 text-xs font-medium outline-none transition-all duration-500 ${
         hasError
           ? 'border-red-300 bg-red-50 focus:border-red-400 focus:ring-1 focus:ring-red-300 text-red-900'
           : 'border-slate-200 bg-white text-slate-800 focus:border-[#031124] focus:ring-1 focus:ring-[#031124]/10'
@@ -104,7 +114,14 @@ const TablePreview = memo(({ entries, onEdit, onDelete, editingId }) => (
           </td>
           {TABLE_COLS.map(c => (
             <td key={c} className={`px-3 py-2.5 whitespace-nowrap ${e.errors?.includes(c) ? 'text-red-600 font-bold' : 'text-slate-700'}`}>
-              {e[c] || '—'}
+              {c === 'entityType' ? (
+                <div className="flex items-center gap-1.5">
+                   <div className={`w-5 h-5 rounded-md flex items-center justify-center ${e.entityType === 'ORGANIZATION' ? 'bg-orange-50 text-orange-500' : 'bg-blue-50 text-blue-500'}`}>
+                    {e.entityType === 'ORGANIZATION' ? <Building2 size={10} /> : <Users size={10} />}
+                  </div>
+                  <span className="text-[10px] font-bold uppercase tracking-tight">{e.entityType || 'IND'}</span>
+                </div>
+              ) : (e[c] || '—')}
             </td>
           ))}
         </tr>
@@ -122,6 +139,11 @@ const AddEntriesModal = ({ onClose, onSave, initialData }) => {
   const [saveError,          setSaveError]          = useState(null);
   const [rejectionReason,    setRejectionReason]    = useState(null);
   const [currentEntryErrors, setCurrentEntryErrors] = useState([]);
+
+  // AI & Voice State
+  const [magicText, setMagicText] = useState("");
+  const [isExtracting, setIsExtracting] = useState(false);
+  const [isListening, setIsListening] = useState(false);
 
   const refs = useRef({});
 
@@ -141,6 +163,69 @@ const AddEntriesModal = ({ onClose, onSave, initialData }) => {
     }
   }, [initialData?.id, initialData?.status]);
 
+  const handleMagicExtract = async (textOverride) => {
+    const textToProcess = textOverride || magicText;
+    if (!textToProcess || textToProcess.trim().length < 5) {
+      toast.error("Please provide a longer description (at least a sentence).");
+      return;
+    }
+
+    setIsExtracting(true);
+    const token = localStorage.getItem('token');
+    
+    try {
+      const resp = await axios.post(`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/sanctioned-entity/extract`, 
+        { text: textToProcess },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      
+      const data = resp.data;
+      if (data) {
+        applyAIExtraction(data);
+        toast.success("✨ Magic Fill complete!");
+        setMagicText("");
+      }
+    } catch (err) {
+      console.error("Extraction failed", err);
+      toast.error("Magic extraction failed. Review server logs.");
+    } finally {
+      setIsExtracting(false);
+    }
+  };
+
+  const applyAIExtraction = (data) => {
+    Object.keys(data).forEach(key => {
+      if (refs.current[key]) {
+        refs.current[key].value = data[key] || '';
+        // Add a temporary glow effect
+        const el = document.getElementById(`field-${key}`);
+        if (el) {
+          el.classList.add('ring-2', 'ring-emerald-400', 'border-emerald-400', 'bg-emerald-50');
+          setTimeout(() => {
+            el.classList.remove('ring-2', 'ring-emerald-400', 'border-emerald-400', 'bg-emerald-50');
+          }, 1500);
+        }
+      }
+    });
+  };
+
+  const toggleVoice = () => {
+    if (isListening) {
+      voiceService.stopListening();
+      setIsListening(false);
+    } else {
+      setIsListening(true);
+      voiceService.startListening(
+        (transcript) => {
+          setMagicText(transcript);
+          setIsListening(false);
+          handleMagicExtract(transcript);
+        },
+        () => setIsListening(false)
+      );
+    }
+  };
+
   const readRefs = () => {
     const data = {};
     Object.keys(refs.current).forEach(k => {
@@ -153,7 +238,14 @@ const AddEntriesModal = ({ onClose, onSave, initialData }) => {
 
   const handleAddOrUpdateEntry = useCallback(() => {
     const data = readRefs();
-    if (!data.name1) { alert("Please enter at least 'Name 1'."); return; }
+    const hasAnyName = ['name1','name2','name3','name4','name5','name6','nameNonLatin','fullName']
+      .some(f => data[f] && String(data[f]).trim().length > 0);
+
+    if (!hasAnyName) { 
+      toast.error("Please provide at least one name for the entry."); 
+      return; 
+    }
+    
     if (editingId) {
       setEntries(prev => prev.map(e => e.id === editingId ? { ...data, id: editingId, _isDirty: true, errors: [] } : e));
       setEditingId(null);
@@ -182,8 +274,8 @@ const AddEntriesModal = ({ onClose, onSave, initialData }) => {
     const data = readRefs();
     const blacklistId = data.blacklistId || initialData?.blacklistId || '';
     const source      = data.source      || initialData?.source      || '';
-    if (!blacklistId || !source) { alert('Please provide Blacklist ID and Source.'); return; }
-    if (!entries.length)         { alert('Add at least one entry.'); return; }
+    if (!blacklistId || !source) { toast.error('Please provide Blacklist ID and Source.'); return; }
+    if (!entries.length)         { toast.error('Add at least one entry to the batch.'); return; }
 
     setIsSaving(true);
     setSaveError(null);
@@ -246,61 +338,92 @@ const AddEntriesModal = ({ onClose, onSave, initialData }) => {
 
           {/* LEFT: form */}
           <div className="lg:w-[340px] xl:w-[360px] bg-white border border-slate-100 rounded-xl flex flex-col shadow-sm overflow-hidden shrink-0">
-
-            {/* Batch identity */}
-            <div className="p-4 bg-blue-50/50 border-b border-blue-100 shrink-0">
-              <div className="flex items-center gap-1.5 mb-3">
-                <Info size={12} className="text-blue-500" />
-                <span className="text-[9px] font-black text-blue-600 uppercase tracking-widest">Batch Identity</span>
-              </div>
-              <div className="grid grid-cols-2 gap-2.5">
-                <Field fieldKey="blacklistId" inputRef={el => refs.current.blacklistId = el} defaultValue={initialData?.blacklistId || ''} />
-                <Field fieldKey="source"      inputRef={el => refs.current.source = el}      defaultValue={initialData?.source || ''} />
+            
+            {/* STICKY HEADER */}
+            <div className="p-4 border-b border-slate-100 bg-white z-10">
+              <div className={`flex items-center justify-between text-[9px] font-black uppercase tracking-widest ${editingId ? 'text-amber-500' : 'text-slate-300'}`}>
+                <span>Entry Details</span>
+                {editingId && (
+                  <span className="bg-amber-50 text-amber-600 border border-amber-100 px-2 py-0.5 rounded-full lowercase italic">editing...</span>
+                )}
               </div>
             </div>
 
-            {/* Person fields */}
-            <div id="entry-form-scroll" className="flex-1 overflow-y-auto p-4 space-y-4">
-              {/* Mode indicator */}
-              <div className={`flex items-center justify-between text-[9px] font-black uppercase tracking-widest ${editingId ? 'text-amber-500' : 'text-slate-300'}`}>
-                <span>Person Details</span>
-                {editingId && (
-                  <span className="bg-amber-50 text-amber-600 border border-amber-100 px-2 py-0.5 rounded-full">Editing Mode</span>
-                )}
-              </div>
+            {/* Batch identity */}
+            <div className="px-4 py-2 bg-slate-50 border-b border-slate-100 flex gap-2">
+               <div className="flex-1"><Field fieldKey="blacklistId" inputRef={el => refs.current.blacklistId = el} defaultValue={initialData?.blacklistId || ''} /></div>
+               <div className="flex-1"><Field fieldKey="source"      inputRef={el => refs.current.source = el}      defaultValue={initialData?.source || ''} /></div>
+            </div>
 
-              <Section title="Names">
+            {/* AI MAGIC BAR */}
+            <div className="p-4 bg-gradient-to-r from-emerald-50 to-teal-50 border-b border-emerald-100">
+              <div className="flex items-center gap-2 mb-2">
+                <Sparkles size={14} className="text-emerald-600" />
+                <span className="text-[10px] font-bold text-emerald-800 uppercase tracking-wider">AI Magic Fill</span>
+              </div>
+              <div className="relative group">
+                <input 
+                  type="text" 
+                  value={magicText}
+                  onChange={(e) => setMagicText(e.target.value)}
+                  placeholder="Paste info or click mic to talk..."
+                  className="w-full bg-white border border-emerald-200 rounded-lg pl-3 pr-20 py-2.5 text-xs text-emerald-900 placeholder:text-emerald-300 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all shadow-sm"
+                  onKeyDown={(e) => e.key === 'Enter' && handleMagicExtract()}
+                />
+                <div className="absolute right-1.5 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                  <button 
+                    onClick={toggleVoice}
+                    className={`p-1.5 rounded-md transition-all ${isListening ? 'bg-red-500 text-white animate-pulse' : 'bg-emerald-100 text-emerald-600 hover:bg-emerald-200'}`}
+                    title="Voice Dictation"
+                  >
+                    {isListening ? <MicOff size={14} /> : <Mic size={14} />}
+                  </button>
+                  <button 
+                    onClick={() => handleMagicExtract()}
+                    disabled={isExtracting || !magicText}
+                    className="p-1.5 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                  >
+                    {isExtracting ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
+                  </button>
+                </div>
+              </div>
+              <p className="mt-2 text-[9px] text-emerald-600 italic leading-tight">
+                "His name is Ahmed, lives in Algiers, passport B123..."
+              </p>
+            </div>
+
+            {/* Form Fields */}
+            <div id="entry-form-scroll" className="flex-1 overflow-y-auto p-4 space-y-4">
+              <Section title="Names & Identity">
                 <div className="grid grid-cols-2 gap-2">
                   {['name1','name2','name3','name4','name5','name6'].map(f => (
                     <Field key={f} fieldKey={f} inputRef={el => refs.current[f] = el} hasError={currentEntryErrors.includes(f)} />
                   ))}
                 </div>
-                <Field fieldKey="title" inputRef={el => refs.current.title = el} hasError={currentEntryErrors.includes('title')} />
-              </Section>
-
-              <Section title="Non-Latin Script" bg="bg-slate-50 border-slate-100">
+                <Field fieldKey="title" inputRef={el => refs.current.title = el} />
                 <Field fieldKey="nameNonLatin" inputRef={el => refs.current.nameNonLatin = el} />
-                <div className="grid grid-cols-2 gap-2">
-                  <Field fieldKey="nonLatinType" inputRef={el => refs.current.nonLatinType = el} />
-                  <Field fieldKey="nonLatinLang" inputRef={el => refs.current.nonLatinLang = el} />
-                </div>
               </Section>
 
-              <Section title="Birth & Nationality" color="text-blue-500">
+              <Section title="Demographics & Type" color="text-blue-500" bg="bg-blue-50/20 border-blue-100">
                 <div className="grid grid-cols-2 gap-2">
-                  <Field fieldKey="dob"         inputRef={el => refs.current.dob = el} />
+                  <Field fieldKey="groupType"    inputRef={el => refs.current.groupType = el} />
                   <Field fieldKey="nationality"  inputRef={el => refs.current.nationality = el} />
+                  <Field fieldKey="dob"          inputRef={el => refs.current.dob = el} />
                   <Field fieldKey="townOfBirth"  inputRef={el => refs.current.townOfBirth = el} />
-                  <Field fieldKey="countryOfBirth" inputRef={el => refs.current.countryOfBirth = el} />
                 </div>
               </Section>
 
-              <Section title="Documents & IDs" color="text-blue-400" bg="bg-blue-50/40 border-blue-100">
+              <Section title="Organization Details" bg="bg-amber-50/20 border-amber-100" color="text-amber-600">
+                <div className="grid grid-cols-2 gap-2">
+                  <Field fieldKey="registrationNumber" inputRef={el => refs.current.registrationNumber = el} />
+                  <Field fieldKey="industry" inputRef={el => refs.current.industry = el} />
+                </div>
+              </Section>
+
+              <Section title="Documents & IDs" color="text-slate-500">
                 <div className="grid grid-cols-2 gap-2">
                   <Field fieldKey="passportNum"     inputRef={el => refs.current.passportNum = el} />
-                  <Field fieldKey="passportDetails" inputRef={el => refs.current.passportDetails = el} />
                   <Field fieldKey="nationalId"       inputRef={el => refs.current.nationalId = el} />
-                  <Field fieldKey="nationalIdDetails" inputRef={el => refs.current.nationalIdDetails = el} />
                 </div>
               </Section>
 
@@ -338,7 +461,7 @@ const AddEntriesModal = ({ onClose, onSave, initialData }) => {
                   }`}
                 >
                   {editingId ? <Check size={16} /> : <Plus size={16} />}
-                  {editingId ? 'Update Person' : 'Add Person to Batch'}
+                  {editingId ? 'Update Entry' : 'Add Entry to Batch'}
                 </button>
               </div>
             </div>

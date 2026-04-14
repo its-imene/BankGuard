@@ -12,6 +12,10 @@ export const documentService = {
     });
     return response.data;
   },
+  deleteDocument: async (id) => {
+    const response = await api.delete(`/evidence-document/${id}`);
+    return response.data;
+  },
 };
 
 export default documentService;
