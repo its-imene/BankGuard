@@ -111,7 +111,7 @@ const MemoRow = memo(({ row, rowIndex, isExpanded, onToggleExpand, uploadingId, 
                     {row.evidenceDocuments.map((doc, i) => (
                       <div key={i} className="flex items-center gap-1 bg-white p-1 rounded-xl shadow-sm border border-blue-100">
                         <a 
-                          href={`http://localhost:3000${doc.storagePath}`} 
+                          href={`${API_BASE_URL}${doc.storagePath}`} 
                           target="_blank" 
                           rel="noreferrer"
                           className="flex items-center gap-2 px-3 py-1 text-xs font-bold text-slate-600 hover:text-blue-600 transition-all"

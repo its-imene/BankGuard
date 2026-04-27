@@ -174,7 +174,7 @@ const AddEntriesModal = ({ onClose, onSave, initialData }) => {
     const token = localStorage.getItem('token');
     
     try {
-      const resp = await axios.post(`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/sanctioned-entity/extract`, 
+      const resp = await axios.post(`${import.meta.env.VITE_API_URL || 'https://sanctions-intelligence-management-system.onrender.com'}/sanctioned-entity/extract`, 
         { text: textToProcess },
         { headers: { Authorization: `Bearer ${token}` } }
       );
