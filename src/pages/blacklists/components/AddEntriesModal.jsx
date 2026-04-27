@@ -11,7 +11,7 @@ import { entriesService } from '../../../services/entriesService';
 import { reviewService }  from '../../../services/reviewService';
 
 const ALL_FIELDS = [
-  'name1','name2','name3','name4','name5','name6',
+  'fullName', 'name1','name2','name3','name4','name5','name6',
   'title','nameNonLatin','nonLatinType','nonLatinLang',
   'entityType','dob','townOfBirth','countryOfBirth','nationality',
   'registrationNumber', 'registrationCountry', 'incorporationDate', 'industry',
@@ -22,6 +22,8 @@ const ALL_FIELDS = [
 ];
 
 const FIELD_LABELS = {
+  fullName: 'Full Name',
+  entityType: 'Entity Type',
   name1:'Name 1', name2:'Name 2', name3:'Name 3', name4:'Name 4',
   name5:'Name 5', name6:'Name 6', title:'Title',
   nameNonLatin:'Non-Latin Name', nonLatinType:'Script Type', nonLatinLang:'Language',
@@ -41,13 +43,10 @@ const FIELD_LABELS = {
 
 const DATE_FIELDS = new Set(['dob','listedOn','ukSanctionsListDate','lastUpdated']);
 
-const TABLE_COLS = [
-  'entityType','groupId','name1','name2','name3','name4',
-  'registrationNumber','dob','nationality','regime','listedOn',
-];
+const TABLE_COLS = [...ALL_FIELDS];
 
 /* ─── Single uncontrolled field ─── */
-const Field = ({ fieldKey, inputRef, defaultValue, hasError }) => (
+const Field = ({ fieldKey, inputRef, defaultValue, hasError, options }) => (
   <div className="flex flex-col gap-1 group">
     <label className={`text-[9px] font-bold uppercase tracking-wider transition-colors duration-500 ${
       hasError ? 'text-red-500' : 'text-slate-400 group-focus-within:text-[#031124]'
@@ -55,17 +54,35 @@ const Field = ({ fieldKey, inputRef, defaultValue, hasError }) => (
       {FIELD_LABELS[fieldKey] || fieldKey}
       {hasError && <span className="ml-1 text-red-400">· Error</span>}
     </label>
-    <input
-      ref={inputRef}
-      id={`field-${fieldKey}`}
-      type={DATE_FIELDS.has(fieldKey) ? 'date' : 'text'}
-      defaultValue={defaultValue || ''}
-      className={`border rounded-lg px-3 py-2 text-xs font-medium outline-none transition-all duration-500 ${
-        hasError
-          ? 'border-red-300 bg-red-50 focus:border-red-400 focus:ring-1 focus:ring-red-300 text-red-900'
-          : 'border-slate-200 bg-white text-slate-800 focus:border-[#031124] focus:ring-1 focus:ring-[#031124]/10'
-      }`}
-    />
+    {options ? (
+      <select
+        ref={inputRef}
+        id={`field-${fieldKey}`}
+        defaultValue={defaultValue || ''}
+        className={`border rounded-lg px-3 py-2 text-xs font-medium outline-none transition-all duration-500 ${
+          hasError
+            ? 'border-red-300 bg-red-50 focus:border-red-400 focus:ring-1 focus:ring-red-300 text-red-900'
+            : 'border-slate-200 bg-white text-slate-800 focus:border-[#031124] focus:ring-1 focus:ring-[#031124]/10'
+        }`}
+      >
+        <option value="">-- Select --</option>
+        {options.map(opt => (
+          <option key={opt.value} value={opt.value}>{opt.label}</option>
+        ))}
+      </select>
+    ) : (
+      <input
+        ref={inputRef}
+        id={`field-${fieldKey}`}
+        type={DATE_FIELDS.has(fieldKey) ? 'date' : 'text'}
+        defaultValue={defaultValue || ''}
+        className={`border rounded-lg px-3 py-2 text-xs font-medium outline-none transition-all duration-500 ${
+          hasError
+            ? 'border-red-300 bg-red-50 focus:border-red-400 focus:ring-1 focus:ring-red-300 text-red-900'
+            : 'border-slate-200 bg-white text-slate-800 focus:border-[#031124] focus:ring-1 focus:ring-[#031124]/10'
+        }`}
+      />
+    )}
   </div>
 );
 
@@ -144,6 +161,28 @@ const AddEntriesModal = ({ onClose, onSave, initialData }) => {
   const [magicText, setMagicText] = useState("");
   const [isExtracting, setIsExtracting] = useState(false);
   const [isListening, setIsListening] = useState(false);
+  
+  // Resizer state
+  const [leftWidth, setLeftWidth] = useState(380);
+
+  const startResize = useCallback((e) => {
+    e.preventDefault();
+    const startX = e.clientX;
+    const startWidth = leftWidth;
+
+    const onMouseMove = (moveEvent) => {
+      const newWidth = Math.max(300, Math.min(800, startWidth + (moveEvent.clientX - startX)));
+      setLeftWidth(newWidth);
+    };
+
+    const onMouseUp = () => {
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup', onMouseUp);
+    };
+
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onMouseUp);
+  }, [leftWidth]);
 
   const refs = useRef({});
 
@@ -333,10 +372,13 @@ const AddEntriesModal = ({ onClose, onSave, initialData }) => {
         )}
 
         {/* ── Body: form + table ── */}
-        <div className="flex flex-col lg:flex-row flex-1 overflow-hidden gap-3 p-3 bg-slate-50/50">
+        <div className="flex flex-col lg:flex-row flex-1 overflow-hidden p-2 sm:p-3 bg-slate-50/50 gap-0">
 
           {/* LEFT: form */}
-          <div className="lg:w-[340px] xl:w-[360px] bg-white border border-slate-100 rounded-xl flex flex-col shadow-sm overflow-hidden shrink-0">
+          <div 
+             style={{ width: typeof window !== 'undefined' && window.innerWidth >= 1024 ? leftWidth : 'auto' }}
+             className="w-full lg:w-auto bg-white border border-slate-100 rounded-xl flex flex-col shadow-sm overflow-hidden shrink-0 mb-3 lg:mb-0"
+          >
             
             {/* STICKY HEADER */}
             <div className="p-4 border-b border-slate-100 bg-white z-10">
@@ -394,27 +436,45 @@ const AddEntriesModal = ({ onClose, onSave, initialData }) => {
             {/* Form Fields */}
             <div id="entry-form-scroll" className="flex-1 overflow-y-auto p-4 space-y-4">
               <Section title="Names & Identity">
+                <div className="mb-2">
+                  <Field fieldKey="fullName" inputRef={el => refs.current.fullName = el} hasError={currentEntryErrors.includes('fullName')} />
+                </div>
                 <div className="grid grid-cols-2 gap-2">
                   {['name1','name2','name3','name4','name5','name6'].map(f => (
                     <Field key={f} fieldKey={f} inputRef={el => refs.current[f] = el} hasError={currentEntryErrors.includes(f)} />
                   ))}
                 </div>
                 <Field fieldKey="title" inputRef={el => refs.current.title = el} />
-                <Field fieldKey="nameNonLatin" inputRef={el => refs.current.nameNonLatin = el} />
+                <div className="grid grid-cols-3 gap-2 mt-2">
+                  <Field fieldKey="nameNonLatin" inputRef={el => refs.current.nameNonLatin = el} />
+                  <Field fieldKey="nonLatinType" inputRef={el => refs.current.nonLatinType = el} />
+                  <Field fieldKey="nonLatinLang" inputRef={el => refs.current.nonLatinLang = el} />
+                </div>
               </Section>
 
               <Section title="Demographics & Type" color="text-blue-500" bg="bg-blue-50/20 border-blue-100">
                 <div className="grid grid-cols-2 gap-2">
-                  <Field fieldKey="groupType"    inputRef={el => refs.current.groupType = el} />
+                  <Field 
+                     fieldKey="entityType" 
+                     inputRef={el => refs.current.entityType = el} 
+                     options={[
+                       { label: 'Individual (IND)', value: 'IND' },
+                       { label: 'Organization/Company', value: 'ORGANIZATION' },
+                       { label: 'Vessel/Ship', value: 'VESSEL' }
+                     ]} 
+                  />
                   <Field fieldKey="nationality"  inputRef={el => refs.current.nationality = el} />
                   <Field fieldKey="dob"          inputRef={el => refs.current.dob = el} />
                   <Field fieldKey="townOfBirth"  inputRef={el => refs.current.townOfBirth = el} />
+                  <Field fieldKey="countryOfBirth" inputRef={el => refs.current.countryOfBirth = el} />
                 </div>
               </Section>
 
               <Section title="Organization Details" bg="bg-amber-50/20 border-amber-100" color="text-amber-600">
                 <div className="grid grid-cols-2 gap-2">
                   <Field fieldKey="registrationNumber" inputRef={el => refs.current.registrationNumber = el} />
+                  <Field fieldKey="registrationCountry" inputRef={el => refs.current.registrationCountry = el} />
+                  <Field fieldKey="incorporationDate" inputRef={el => refs.current.incorporationDate = el} />
                   <Field fieldKey="industry" inputRef={el => refs.current.industry = el} />
                 </div>
               </Section>
@@ -422,7 +482,9 @@ const AddEntriesModal = ({ onClose, onSave, initialData }) => {
               <Section title="Documents & IDs" color="text-slate-500">
                 <div className="grid grid-cols-2 gap-2">
                   <Field fieldKey="passportNum"     inputRef={el => refs.current.passportNum = el} />
+                  <Field fieldKey="passportDetails" inputRef={el => refs.current.passportDetails = el} />
                   <Field fieldKey="nationalId"       inputRef={el => refs.current.nationalId = el} />
+                  <Field fieldKey="nationalIdDetails" inputRef={el => refs.current.nationalIdDetails = el} />
                 </div>
               </Section>
 
@@ -444,6 +506,7 @@ const AddEntriesModal = ({ onClose, onSave, initialData }) => {
                   <Field fieldKey="aliasQuality"  inputRef={el => refs.current.aliasQuality = el} />
                   <Field fieldKey="listedOn"      inputRef={el => refs.current.listedOn = el} />
                   <Field fieldKey="ukSanctionsListDate" inputRef={el => refs.current.ukSanctionsListDate = el} />
+                  <Field fieldKey="lastUpdated"  inputRef={el => refs.current.lastUpdated = el} />
                 </div>
                 <Field fieldKey="groupId"   inputRef={el => refs.current.groupId = el} />
                 <Field fieldKey="otherInfo" inputRef={el => refs.current.otherInfo = el} />
@@ -464,6 +527,14 @@ const AddEntriesModal = ({ onClose, onSave, initialData }) => {
                 </button>
               </div>
             </div>
+          </div>
+
+          {/* DRAG HANDLE */}
+          <div 
+            onMouseDown={startResize}
+            className="hidden lg:flex w-3 mx-0.5 cursor-col-resize items-center justify-center hover:bg-slate-200/50 rounded-full transition-colors group z-10 shrink-0"
+          >
+            <div className="w-1 h-8 bg-slate-200 rounded-full group-hover:bg-slate-400 shadow-sm transition-colors" />
           </div>
 
           {/* RIGHT: table preview */}

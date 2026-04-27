@@ -21,6 +21,7 @@ const ALL_COLUMNS = [
   'addr1','addr2','addr3','addr4','addr5','addr6',
   'zipCode','country','otherInfo','groupType','aliasType',
   'aliasQuality','regime','listedOn','ukSanctionsListDate','lastUpdated','groupId',
+  'fullName', 'registrationNumber', 'registrationCountry', 'incorporationDate', 'industry'
 ];
 
 const fmtCol = col => col.replace(/([A-Z])/g, ' $1').replace(/^\w/, c => c.toUpperCase());
