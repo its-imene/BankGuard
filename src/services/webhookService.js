@@ -7,6 +7,8 @@ const webhookService = {
   deleteTarget: (id) => api.delete(`/webhooks/targets/${id}`),
   getDeliveries: (targetId) => api.get('/webhooks/deliveries', { params: { targetId } }),
   testDelivery: (batchId, targetId, eventType) => api.post('/webhooks/test-delivery', { batchId, targetId, eventType }),
+  getSettings: () => api.get('/system-settings'),
+  updateSetting: (key, value) => api.patch(`/system-settings/${key}`, { value }),
 };
 
 export default webhookService;

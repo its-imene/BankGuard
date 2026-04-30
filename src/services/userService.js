@@ -25,6 +25,11 @@ export const userService = {
     const response = await api.delete(`/user/${id}`);
     return response.data;
   },
+
+  confirmAccount: async (token) => {
+    const response = await api.post(`/user/confirm/${token}`);
+    return response.data;
+  },
 };
 
 export default userService;

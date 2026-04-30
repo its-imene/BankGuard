@@ -69,7 +69,7 @@ const EntriesTable = ({ data, currentFilter, onFilterChange, onEdit, onDelete })
       <table className="w-full text-left">
         <thead>
           <tr className="text-slate-400 text-xs uppercase tracking-wider border-b border-slate-100">
-            <th className="pb-4 font-bold">Version</th>
+            <th className="pb-4 font-bold">Blacklist ID</th>
             <th className="pb-4 font-bold">Source</th>
             <th className="pb-4 font-bold">Reception Date</th>
             <th className="pb-4 font-bold">Entries</th>
@@ -81,7 +81,7 @@ const EntriesTable = ({ data, currentFilter, onFilterChange, onEdit, onDelete })
           {data.length > 0 ? (
             data.map((row) => (
               <tr key={row.id} className="hover:bg-slate-50/50 transition-colors">
-                <td className="py-4 text-sm font-bold text-slate-700">{row.version}</td>
+                <td className="py-4 text-sm font-bold text-slate-700">{row.blacklistId || '—'}</td>
                 <td className="py-4 text-sm font-bold text-slate-700">{row.source}</td>
                 <td className="py-4 text-sm text-slate-600">{row.date}</td>
                 <td className="py-4 text-sm text-slate-600">{row.entries}</td>

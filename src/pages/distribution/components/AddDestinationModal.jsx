@@ -33,6 +33,7 @@ export default function AddDestinationModal({ isOpen, onClose, onSave, target = 
     { id: 'EXCEL', label: 'Excel', icon: '⊞', desc: 'Spreadsheet' },
     { id: 'HMT', label: 'HM Treasury', icon: '🇬🇧', desc: 'UK schema' },
     { id: 'CUSTOM', label: 'Custom', icon: '⚙', desc: 'Field mapping' },
+    { id: 'FILE_STORAGE', label: 'Cloud Storage', icon: '☁', desc: 'Drive/S3 (Soon)', disabled: true },
   ];
 
   const validateForm = () => {
@@ -203,7 +204,7 @@ export default function AddDestinationModal({ isOpen, onClose, onSave, target = 
                 {/* Target URL */}
                 <div className="space-y-2">
                   <label className="block text-sm font-semibold text-slate-700">
-                    Webhook URL
+                    System URL / Webhook
                     <span className="text-red-500 ml-1">*</span>
                   </label>
                   <div className="relative">
@@ -254,16 +255,21 @@ export default function AddDestinationModal({ isOpen, onClose, onSave, target = 
                   <button
                     key={f.id}
                     type="button"
+                    disabled={f.disabled}
                     onClick={() => setFormData(prev => ({ ...prev, format: f.id }))}
                     className={`relative p-4 rounded-xl border-2 transition-all ${
                       formData.format === f.id 
                         ? 'border-orange-500 bg-orange-50' 
                         : 'border-slate-200 bg-white hover:border-slate-300'
-                    }`}
+                    } ${f.disabled ? 'opacity-50 cursor-not-allowed grayscale' : ''}`}
                   >
                     <div className="text-2xl mb-2">{f.icon}</div>
                     <div className="text-xs font-bold text-slate-900">{f.label}</div>
-                    <div className="text-[10px] text-slate-500 mt-1">{f.desc}</div>
+                    {f.disabled ? (
+                      <div className="text-[10px] text-orange-600 font-bold mt-1 uppercase">Coming Soon</div>
+                    ) : (
+                      <div className="text-[10px] text-slate-500 mt-1">{f.desc}</div>
+                    )}
                     {formData.format === f.id && (
                       <div className="absolute top-2 right-2 w-2 h-2 bg-orange-500 rounded-full" />
                     )}

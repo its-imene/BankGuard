@@ -110,7 +110,7 @@ const BlacklistsTable = ({ data, currentFilter, onFilterChange, onEdit, onDelete
               data.map((row) => (
                 <tr key={row.id} className="hover:bg-slate-50/40 transition-colors group">
                   <td className="px-5 py-3.5 text-xs font-bold text-slate-700 font-mono">
-                    {row.blacklistId || row.version || '—'}
+                    {row.blacklistId || '—'}
                   </td>
                   <td className="px-5 py-3.5 text-sm font-semibold text-slate-800">
                     {row.source}

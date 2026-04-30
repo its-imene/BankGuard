@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Loader2, Shield } from 'lucide-react';
 import { useOutletContext } from 'react-router-dom';
+import toast from 'react-hot-toast';
+import { useConfirm } from '../../context/ConfirmContext';
 import BlacklistsTable from './components/BlacklistsTable';
 import AddBlacklistModal from './components/AddBlacklistModal';
 import { blacklistService } from '../../services/blacklistService';
@@ -10,6 +12,7 @@ import AddEntriesModal from './components/AddEntriesModal';
 
 const Blacklists = () => {
   const { searchQuery } = useOutletContext();
+  const confirm = useConfirm();
   const [blacklists, setBlacklists] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState('all');
@@ -48,6 +51,8 @@ const Blacklists = () => {
     try {
       if (payload.file) {
         await blacklistService.uploadBlacklist(payload.file, payload.metadata);
+      } else if (payload.url) {
+        await blacklistService.importFromUrl(payload.url, payload.metadata);
       } else if (payload.manualData) {
         await blacklistService.bulkCreateBlacklist({
           source: payload.source,
@@ -57,10 +62,13 @@ const Blacklists = () => {
       } else {
         await blacklistService.createBlacklist(payload);
       }
+      toast.success('Batch ingested successfully!');
       await fetchBlacklists();
       setIsAddOpen(false);
       setIsManualOpen(false);
     } catch (err) {
+      const msg = err.response?.data?.message || 'Failed to add blacklist';
+      toast.error(Array.isArray(msg) ? msg[0] : msg);
       console.error('Failed to add blacklist', err);
       throw err;
     }
@@ -70,9 +78,11 @@ const Blacklists = () => {
     try {
       const { id, createdAt, updatedAt, entityProfiles, evidenceDocuments, reviews, createdBy, createdById, ...dto } = updatedItem;
       await blacklistService.updateBlacklist(id, dto);
+      toast.success('Batch updated successfully');
       await fetchBlacklists();
       setEditingItem(null);
     } catch (err) {
+      toast.error('Failed to update blacklist');
       console.error('Failed to update blacklist', err);
       throw err;
     }
@@ -81,14 +91,23 @@ const Blacklists = () => {
   const deleteBlacklist = async (id) => {
     const item = blacklists.find(b => b.id === id);
     if (!item) return;
-    const displayName = item.name || item.blacklistId || 'this list';
-    if (window.confirm(`Are you sure you want to delete "${displayName}"?`)) {
+    const displayName = item.source || item.blacklistId || 'this list';
+    
+    const isConfirmed = await confirm({
+      title: 'Delete Blacklist?',
+      message: `Are you sure you want to delete "${displayName}"? This will archive all associated entries.`,
+      confirmText: 'Delete Now',
+      type: 'danger'
+    });
+
+    if (isConfirmed) {
       try {
         await blacklistService.deleteBlacklist(id);
+        toast.success('Batch archived successfully');
         await fetchBlacklists();
       } catch (err) {
+        toast.error('Failed to delete blacklist');
         console.error('Failed to delete blacklist', err);
-        throw err;
       }
     }
   };
