@@ -10,6 +10,8 @@ import { voiceService } from '../../../services/voiceService';
 import { entriesService } from '../../../services/entriesService';
 import { reviewService }  from '../../../services/reviewService';
 
+const COUNTRY_FIELDS = new Set(['nationality', 'countryOfBirth', 'registrationCountry', 'country']);
+
 const ALL_FIELDS = [
   'fullName', 'name1','name2','name3','name4','name5','name6',
   'title','nameNonLatin','nonLatinType','nonLatinLang',
@@ -43,10 +45,55 @@ const FIELD_LABELS = {
 
 const DATE_FIELDS = new Set(['dob','listedOn','ukSanctionsListDate','lastUpdated']);
 
+const FIELD_EXAMPLES = {
+  blacklistId: 'e.g. OFAC-2026-001',
+  source: 'e.g. OFAC SDN',
+  fullName: 'e.g. Ahmed Ben Salah',
+  name1: 'Given name',
+  name2: 'Middle name',
+  name3: 'Family name',
+  title: 'e.g. Mr, Dr, Sheikh',
+  nameNonLatin: 'e.g. احمد بن صالح',
+  nonLatinType: 'e.g. Arabic',
+  nonLatinLang: 'e.g. ar',
+  dob: 'YYYY-MM-DD',
+  townOfBirth: 'e.g. Algiers',
+  registrationNumber: 'e.g. 123456-B',
+  incorporationDate: 'YYYY-MM-DD',
+  industry: 'e.g. Shipping',
+  passportNum: 'e.g. P1234567',
+  passportDetails: 'Country + issue details',
+  nationalId: 'e.g. 99-123456',
+  nationalIdDetails: 'Issuer, issue date',
+  addr1: 'Street and number',
+  addr2: 'City / region',
+  zipCode: 'e.g. 16000',
+  groupType: 'e.g. Terrorism',
+  aliasType: 'e.g. AKA',
+  aliasQuality: 'e.g. Good',
+  regime: 'e.g. UN 1267',
+  listedOn: 'YYYY-MM-DD',
+  ukSanctionsListDate: 'YYYY-MM-DD',
+  lastUpdated: 'YYYY-MM-DD',
+  groupId: 'e.g. G-2026-90',
+  otherInfo: 'Any additional identifying notes',
+};
+
+const getIntlCountryOptions = () => {
+  if (!Intl?.DisplayNames || !Intl?.supportedValuesOf) return [];
+  const display = new Intl.DisplayNames(['en'], { type: 'region' });
+  return Intl.supportedValuesOf('region')
+    .map(code => display.of(code))
+    .filter(Boolean)
+    .filter(name => name !== 'Unknown Region' && !/^[A-Z]{2}$/.test(name))
+    .sort((a, b) => a.localeCompare(b))
+    .map(name => ({ label: name, value: name }));
+};
+
 const TABLE_COLS = [...ALL_FIELDS];
 
 /* ─── Single uncontrolled field ─── */
-const Field = ({ fieldKey, inputRef, defaultValue, hasError, options }) => (
+const Field = ({ fieldKey, inputRef, defaultValue, hasError, options, placeholder }) => (
   <div className="flex flex-col gap-1 group">
     <label className={`text-[9px] font-bold uppercase tracking-wider transition-colors duration-500 ${
       hasError ? 'text-red-500' : 'text-slate-400 group-focus-within:text-[#031124]'
@@ -65,9 +112,11 @@ const Field = ({ fieldKey, inputRef, defaultValue, hasError, options }) => (
             : 'border-slate-200 bg-white text-slate-800 focus:border-[#031124] focus:ring-1 focus:ring-[#031124]/10'
         }`}
       >
-        <option value="">-- Select --</option>
+        <option value="">{placeholder || '-- Select --'}</option>
         {options.map(opt => (
-          <option key={opt.value} value={opt.value}>{opt.label}</option>
+          <option key={typeof opt === 'string' ? opt : opt.value} value={typeof opt === 'string' ? opt : opt.value}>
+            {typeof opt === 'string' ? opt : opt.label}
+          </option>
         ))}
       </select>
     ) : (
@@ -76,6 +125,7 @@ const Field = ({ fieldKey, inputRef, defaultValue, hasError, options }) => (
         id={`field-${fieldKey}`}
         type={DATE_FIELDS.has(fieldKey) ? 'date' : 'text'}
         defaultValue={defaultValue || ''}
+        placeholder={placeholder}
         className={`border rounded-lg px-3 py-2 text-xs font-medium outline-none transition-all duration-500 ${
           hasError
             ? 'border-red-300 bg-red-50 focus:border-red-400 focus:ring-1 focus:ring-red-300 text-red-900'
@@ -164,6 +214,7 @@ const AddEntriesModal = ({ onClose, onSave, initialData }) => {
   
   // Resizer state
   const [leftWidth, setLeftWidth] = useState(380);
+  const [countryOptions, setCountryOptions] = useState([]);
 
   const startResize = useCallback((e) => {
     e.preventDefault();
@@ -201,6 +252,38 @@ const AddEntriesModal = ({ onClose, onSave, initialData }) => {
       });
     }
   }, [initialData?.id, initialData?.status]);
+
+  useEffect(() => {
+    let active = true;
+
+    const loadCountries = async () => {
+      try {
+        const response = await fetch('https://restcountries.com/v3.1/all?fields=name');
+        const countries = await response.json();
+        const options = countries
+          .map(country => country?.name?.common)
+          .filter(Boolean)
+          .sort((a, b) => a.localeCompare(b))
+          .map(name => ({ label: name, value: name }));
+
+        if (active && options.length) {
+          setCountryOptions(options);
+          return;
+        }
+      } catch (err) {
+        console.error('Failed to fetch countries list', err);
+      }
+
+      if (active) {
+        setCountryOptions(getIntlCountryOptions());
+      }
+    };
+
+    loadCountries();
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const handleMagicExtract = async (textOverride) => {
     const textToProcess = textOverride || magicText;
@@ -336,6 +419,16 @@ const AddEntriesModal = ({ onClose, onSave, initialData }) => {
     }
   };
 
+  const renderField = (fieldKey, inputRef, hasError, extra = {}) => (
+    <Field
+      fieldKey={fieldKey}
+      inputRef={inputRef}
+      hasError={hasError}
+      placeholder={extra.placeholder || FIELD_EXAMPLES[fieldKey] || (COUNTRY_FIELDS.has(fieldKey) ? 'Select a country' : undefined)}
+      options={COUNTRY_FIELDS.has(fieldKey) ? countryOptions : extra.options}
+    />
+  );
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-2 sm:p-4">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-[98vw] h-[95vh] sm:h-[92vh] flex flex-col overflow-hidden">
@@ -392,8 +485,8 @@ const AddEntriesModal = ({ onClose, onSave, initialData }) => {
 
             {/* Batch identity */}
             <div className="px-4 py-2 bg-slate-50 border-b border-slate-100 flex gap-2">
-               <div className="flex-1"><Field fieldKey="blacklistId" inputRef={el => refs.current.blacklistId = el} defaultValue={initialData?.blacklistId || ''} /></div>
-               <div className="flex-1"><Field fieldKey="source"      inputRef={el => refs.current.source = el}      defaultValue={initialData?.source || ''} /></div>
+               <div className="flex-1"><Field fieldKey="blacklistId" inputRef={el => refs.current.blacklistId = el} defaultValue={initialData?.blacklistId || ''} placeholder={FIELD_EXAMPLES.blacklistId} /></div>
+               <div className="flex-1"><Field fieldKey="source"      inputRef={el => refs.current.source = el}      defaultValue={initialData?.source || ''} placeholder={FIELD_EXAMPLES.source} /></div>
             </div>
 
             {/* AI MAGIC BAR */}
@@ -437,79 +530,79 @@ const AddEntriesModal = ({ onClose, onSave, initialData }) => {
             <div id="entry-form-scroll" className="flex-1 overflow-y-auto p-4 space-y-4">
               <Section title="Names & Identity">
                 <div className="mb-2">
-                  <Field fieldKey="fullName" inputRef={el => refs.current.fullName = el} hasError={currentEntryErrors.includes('fullName')} />
+                  {renderField('fullName', el => refs.current.fullName = el, currentEntryErrors.includes('fullName'))}
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   {['name1','name2','name3','name4','name5','name6'].map(f => (
-                    <Field key={f} fieldKey={f} inputRef={el => refs.current[f] = el} hasError={currentEntryErrors.includes(f)} />
+                    <React.Fragment key={f}>
+                      {renderField(f, el => refs.current[f] = el, currentEntryErrors.includes(f))}
+                    </React.Fragment>
                   ))}
                 </div>
-                <Field fieldKey="title" inputRef={el => refs.current.title = el} />
+                {renderField('title', el => refs.current.title = el)}
                 <div className="grid grid-cols-3 gap-2 mt-2">
-                  <Field fieldKey="nameNonLatin" inputRef={el => refs.current.nameNonLatin = el} />
-                  <Field fieldKey="nonLatinType" inputRef={el => refs.current.nonLatinType = el} />
-                  <Field fieldKey="nonLatinLang" inputRef={el => refs.current.nonLatinLang = el} />
+                  {renderField('nameNonLatin', el => refs.current.nameNonLatin = el)}
+                  {renderField('nonLatinType', el => refs.current.nonLatinType = el)}
+                  {renderField('nonLatinLang', el => refs.current.nonLatinLang = el)}
                 </div>
               </Section>
 
               <Section title="Demographics & Type" color="text-blue-500" bg="bg-blue-50/20 border-blue-100">
                 <div className="grid grid-cols-2 gap-2">
-                  <Field 
-                     fieldKey="entityType" 
-                     inputRef={el => refs.current.entityType = el} 
-                     options={[
+                  {renderField('entityType', el => refs.current.entityType = el, false, { options: [
                        { label: 'Individual (IND)', value: 'IND' },
                        { label: 'Organization/Company', value: 'ORGANIZATION' },
                        { label: 'Vessel/Ship', value: 'VESSEL' }
-                     ]} 
-                  />
-                  <Field fieldKey="nationality"  inputRef={el => refs.current.nationality = el} />
-                  <Field fieldKey="dob"          inputRef={el => refs.current.dob = el} />
-                  <Field fieldKey="townOfBirth"  inputRef={el => refs.current.townOfBirth = el} />
-                  <Field fieldKey="countryOfBirth" inputRef={el => refs.current.countryOfBirth = el} />
+                     ] })}
+                  {renderField('nationality', el => refs.current.nationality = el)}
+                  {renderField('dob', el => refs.current.dob = el)}
+                  {renderField('townOfBirth', el => refs.current.townOfBirth = el)}
+                  {renderField('countryOfBirth', el => refs.current.countryOfBirth = el)}
                 </div>
               </Section>
 
               <Section title="Organization Details" bg="bg-amber-50/20 border-amber-100" color="text-amber-600">
                 <div className="grid grid-cols-2 gap-2">
-                  <Field fieldKey="registrationNumber" inputRef={el => refs.current.registrationNumber = el} />
-                  <Field fieldKey="registrationCountry" inputRef={el => refs.current.registrationCountry = el} />
-                  <Field fieldKey="incorporationDate" inputRef={el => refs.current.incorporationDate = el} />
-                  <Field fieldKey="industry" inputRef={el => refs.current.industry = el} />
+                  {renderField('registrationNumber', el => refs.current.registrationNumber = el)}
+                  {renderField('registrationCountry', el => refs.current.registrationCountry = el)}
+                  {renderField('incorporationDate', el => refs.current.incorporationDate = el)}
+                  {renderField('industry', el => refs.current.industry = el)}
                 </div>
               </Section>
 
               <Section title="Documents & IDs" color="text-slate-500">
                 <div className="grid grid-cols-2 gap-2">
-                  <Field fieldKey="passportNum"     inputRef={el => refs.current.passportNum = el} />
-                  <Field fieldKey="passportDetails" inputRef={el => refs.current.passportDetails = el} />
-                  <Field fieldKey="nationalId"       inputRef={el => refs.current.nationalId = el} />
-                  <Field fieldKey="nationalIdDetails" inputRef={el => refs.current.nationalIdDetails = el} />
+                  {renderField('passportNum', el => refs.current.passportNum = el)}
+                  {renderField('passportDetails', el => refs.current.passportDetails = el)}
+                  {renderField('nationalId', el => refs.current.nationalId = el)}
+                  {renderField('nationalIdDetails', el => refs.current.nationalIdDetails = el)}
                 </div>
               </Section>
 
               <Section title="Addresses" color="text-blue-500">
                 <div className="grid grid-cols-2 gap-2">
                   {['addr1','addr2','addr3','addr4','addr5','addr6'].map(f => (
-                    <Field key={f} fieldKey={f} inputRef={el => refs.current[f] = el} />
+                    <React.Fragment key={f}>
+                      {renderField(f, el => refs.current[f] = el)}
+                    </React.Fragment>
                   ))}
-                  <Field fieldKey="zipCode" inputRef={el => refs.current.zipCode = el} />
-                  <Field fieldKey="country" inputRef={el => refs.current.country = el} />
+                  {renderField('zipCode', el => refs.current.zipCode = el)}
+                  {renderField('country', el => refs.current.country = el)}
                 </div>
               </Section>
 
               <Section title="Sanction Details" color="text-red-500" bg="bg-red-50/30 border-red-100">
                 <div className="grid grid-cols-2 gap-2">
-                  <Field fieldKey="groupType"    inputRef={el => refs.current.groupType = el} />
-                  <Field fieldKey="regime"        inputRef={el => refs.current.regime = el} />
-                  <Field fieldKey="aliasType"     inputRef={el => refs.current.aliasType = el} />
-                  <Field fieldKey="aliasQuality"  inputRef={el => refs.current.aliasQuality = el} />
-                  <Field fieldKey="listedOn"      inputRef={el => refs.current.listedOn = el} />
-                  <Field fieldKey="ukSanctionsListDate" inputRef={el => refs.current.ukSanctionsListDate = el} />
-                  <Field fieldKey="lastUpdated"  inputRef={el => refs.current.lastUpdated = el} />
+                  {renderField('groupType', el => refs.current.groupType = el)}
+                  {renderField('regime', el => refs.current.regime = el)}
+                  {renderField('aliasType', el => refs.current.aliasType = el)}
+                  {renderField('aliasQuality', el => refs.current.aliasQuality = el)}
+                  {renderField('listedOn', el => refs.current.listedOn = el)}
+                  {renderField('ukSanctionsListDate', el => refs.current.ukSanctionsListDate = el)}
+                  {renderField('lastUpdated', el => refs.current.lastUpdated = el)}
                 </div>
-                <Field fieldKey="groupId"   inputRef={el => refs.current.groupId = el} />
-                <Field fieldKey="otherInfo" inputRef={el => refs.current.otherInfo = el} />
+                {renderField('groupId', el => refs.current.groupId = el)}
+                {renderField('otherInfo', el => refs.current.otherInfo = el)}
               </Section>
 
               {/* Add / Update CTA — sticky */}
