@@ -13,25 +13,70 @@ import { profileService }  from '../../../services/profileService';
 import toast from 'react-hot-toast';
 import { useConfirm } from '../../../context/ConfirmContext';
 
-const ALL_COLUMNS = [
-  'name6','name1','name2','name3','name4','name5',
-  'title','nameNonLatin','nonLatinType','nonLatinLang',
-  'dob','townOfBirth','countryOfBirth','nationality',
-  'passportNum','passportDetails','nationalId','nationalIdDetails',
-  'addr1','addr2','addr3','addr4','addr5','addr6',
-  'zipCode','country','otherInfo','groupType','aliasType',
-  'aliasQuality','regime','listedOn','ukSanctionsListDate','lastUpdated','groupId',
-  'fullName', 'registrationNumber', 'registrationCountry', 'incorporationDate', 'industry'
+const FIELD_LABELS = {
+  fullName: 'Full Name',
+  name1: 'Name 1',
+  name2: 'Name 2',
+  name3: 'Name 3',
+  name4: 'Name 4',
+  name5: 'Name 5',
+  name6: 'Name 6',
+  title: 'Title',
+  nameNonLatin: 'Non-Latin Name',
+  nonLatinType: 'Script Type',
+  nonLatinLang: 'Language',
+  entityType: 'Entity Type',
+  dob: 'Date of Birth',
+  townOfBirth: 'Town of Birth',
+  countryOfBirth: 'Country of Birth',
+  nationality: 'Nationality',
+  registrationNumber: 'Registration No.',
+  registrationCountry: 'Registration Country',
+  incorporationDate: 'Incorporation Date',
+  industry: 'Industry',
+  passportNum: 'Passport No.',
+  passportDetails: 'Passport Details',
+  nationalId: 'National ID',
+  nationalIdDetails: 'ID Details',
+  addr1: 'Address 1',
+  addr2: 'Address 2',
+  addr3: 'Address 3',
+  addr4: 'Address 4',
+  addr5: 'Address 5',
+  addr6: 'Address 6',
+  zipCode: 'Zip / Post Code',
+  country: 'Country',
+  groupType: 'Group Type',
+  aliasType: 'Alias Type',
+  aliasQuality: 'Alias Quality',
+  regime: 'Regime',
+  listedOn: 'Listed On',
+  ukSanctionsListDate: 'UK Sanctions Date',
+  lastUpdated: 'Last Updated',
+  groupId: 'Group ID',
+  otherInfo: 'Other Information',
+};
+
+const DETAIL_SECTIONS = [
+  { title: 'Identity', fields: ['fullName', 'name1', 'name2', 'name3', 'name4', 'name5', 'name6', 'title', 'nameNonLatin', 'nonLatinType', 'nonLatinLang'] },
+  { title: 'Demographics', fields: ['entityType', 'dob', 'townOfBirth', 'countryOfBirth', 'nationality'] },
+  { title: 'Identifiers', fields: ['passportNum', 'passportDetails', 'nationalId', 'nationalIdDetails'] },
+  { title: 'Address', fields: ['addr1', 'addr2', 'addr3', 'addr4', 'addr5', 'addr6', 'zipCode', 'country'] },
+  { title: 'Organization', fields: ['registrationNumber', 'registrationCountry', 'incorporationDate', 'industry'] },
+  { title: 'Sanctions', fields: ['groupType', 'aliasType', 'aliasQuality', 'regime', 'listedOn', 'ukSanctionsListDate', 'lastUpdated', 'groupId', 'otherInfo'] },
 ];
 
 const fmtCol = col => col.replace(/([A-Z])/g, ' $1').replace(/^\w/, c => c.toUpperCase());
 
+const hasValue = (value) => value !== null && value !== undefined && String(value).trim() !== '';
+
 
 
 /* ─── Memoised table row ─── */
-const MemoRow = memo(({ row, rowIndex, isExpanded, onToggleExpand, uploadingId, onFileUpload, onDeleteDoc, onToggleError, onRefresh }) => {
+const MemoRow = memo(({ row, rowIndex, isExpanded, onToggleExpand, uploadingId, onFileUpload, onDeleteDoc, onToggleError }) => {
   const isErroneous = row.errors?.length > 0;
   const displayName = row.fullName || [row.name1, row.name2, row.name3, row.name4, row.name5, row.name6].filter(Boolean).join(' ') || 'Unnamed Entry';
+  const [showEmptyFields, setShowEmptyFields] = useState(false);
 
   return (
     <>
@@ -93,8 +138,17 @@ const MemoRow = memo(({ row, rowIndex, isExpanded, onToggleExpand, uploadingId, 
             
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
               <div className="p-4 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
-                <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest">Source Data Matrix</h4>
-                <div className="flex gap-2 text-red-500">
+                <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest">Entry Details</h4>
+                <div className="flex gap-2 text-red-500 items-center">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowEmptyFields(prev => !prev);
+                    }}
+                    className="px-3 py-1.5 rounded-lg text-[10px] font-bold bg-slate-100 text-slate-600 hover:bg-slate-200 transition-all"
+                  >
+                    {showEmptyFields ? 'Hide Empty Fields' : 'Show Empty Fields'}
+                  </button>
                   <label className={`cursor-pointer flex items-center gap-2 px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all ${
                     uploadingId === row.id ? 'bg-slate-100 text-slate-300' : 'bg-blue-50 text-blue-600 hover:bg-blue-100'
                   }`}>
@@ -133,27 +187,59 @@ const MemoRow = memo(({ row, rowIndex, isExpanded, onToggleExpand, uploadingId, 
                 </div>
               )}
               
-              <div className="p-6 grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                {ALL_COLUMNS.map(col => {
-                  const isErr = row.errors?.includes(col);
+              <div className="p-6 space-y-5">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                  {[
+                    { label: 'Entity Type', value: row.entityType || row.groupType || 'Unknown' },
+                    { label: 'Nationality', value: row.nationality || 'Not set' },
+                    { label: 'Location', value: [row.townOfBirth, row.countryOfBirth || row.country].filter(Boolean).join(', ') || 'Not set' },
+                    { label: 'Flagged Fields', value: String(row.errors?.length || 0) },
+                  ].map((item) => (
+                    <div key={item.label} className="bg-white border border-slate-100 rounded-xl px-3 py-2.5">
+                      <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">{item.label}</p>
+                      <p className="text-xs font-semibold text-slate-700 mt-1 break-all">{item.value}</p>
+                    </div>
+                  ))}
+                </div>
+
+                {DETAIL_SECTIONS.map(section => {
+                  const fields = section.fields.filter((field) => {
+                    const isErr = row.errors?.includes(field);
+                    return showEmptyFields || isErr || hasValue(row[field]);
+                  });
+
+                  if (!fields.length) return null;
+
                   return (
-                    <div 
-                      key={col}
-                      onClick={() => onToggleError(rowIndex, col)}
-                      className={`group/field p-3 rounded-xl border transition-all cursor-pointer ${
-                        isErr 
-                          ? 'bg-red-50 border-red-200 text-red-700' 
-                          : 'bg-white border-slate-100 hover:border-blue-200 hover:shadow-sm'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between mb-1">
-                        <span className={`text-[9px] font-black uppercase tracking-wider ${isErr ? 'text-red-400' : 'text-slate-400'}`}>
-                          {fmtCol(col)}
-                        </span>
-                        {isErr && <AlertCircle size={10} className="text-red-500" />}
-                      </div>
-                      <div className="text-xs font-bold break-all">
-                        {row[col] || <span className="text-slate-200">—</span>}
+                    <div key={section.title} className="space-y-2">
+                      <h5 className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                        {section.title}
+                      </h5>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                        {fields.map((field) => {
+                          const isErr = row.errors?.includes(field);
+                          return (
+                            <button
+                              key={field}
+                              onClick={() => onToggleError(rowIndex, field)}
+                              className={`text-left p-3 rounded-xl border transition-all ${
+                                isErr
+                                  ? 'bg-red-50 border-red-200 text-red-700'
+                                  : 'bg-white border-slate-100 hover:border-blue-200 hover:shadow-sm'
+                              }`}
+                            >
+                              <div className="flex items-center justify-between mb-1">
+                                <span className={`text-[9px] font-black uppercase tracking-wider ${isErr ? 'text-red-400' : 'text-slate-400'}`}>
+                                  {FIELD_LABELS[field] || fmtCol(field)}
+                                </span>
+                                {isErr && <AlertCircle size={10} className="text-red-500" />}
+                              </div>
+                              <div className="text-xs font-bold break-all">
+                                {hasValue(row[field]) ? row[field] : <span className="text-slate-300">—</span>}
+                              </div>
+                            </button>
+                          );
+                        })}
                       </div>
                     </div>
                   );
@@ -392,7 +478,6 @@ const ViewEntriesModal = ({ item, onClose, onUpdateBatch }) => {
                         onFileUpload={handleFileUpload}
                         onDeleteDoc={handleDeleteDoc}
                         onToggleError={toggleCellError}
-                        onRefresh={fetchEntries}
                       />
                     ))}
                   </tbody>
@@ -407,4 +492,3 @@ const ViewEntriesModal = ({ item, onClose, onUpdateBatch }) => {
 };
 
 export default ViewEntriesModal;
-
