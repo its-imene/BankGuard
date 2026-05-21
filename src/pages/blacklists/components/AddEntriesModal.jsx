@@ -5,7 +5,7 @@ import {
   Sparkles, Mic, MicOff, Send
 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import axios from 'axios';
+import api from '../../../services/api';
 import { voiceService } from '../../../services/voiceService';
 import { entriesService } from '../../../services/entriesService';
 import { reviewService }  from '../../../services/reviewService';
@@ -293,13 +293,8 @@ const AddEntriesModal = ({ onClose, onSave, initialData }) => {
     }
 
     setIsExtracting(true);
-    const token = localStorage.getItem('token');
-    
     try {
-      const resp = await axios.post(`${import.meta.env.VITE_API_URL || 'https://sanctions-intelligence-management-system.onrender.com'}/sanctioned-entity/extract`, 
-        { text: textToProcess },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const resp = await api.post('/sanctioned-entity/extract', { text: textToProcess });
       
       const data = resp.data;
       if (data) {

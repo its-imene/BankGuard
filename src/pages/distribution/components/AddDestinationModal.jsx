@@ -364,9 +364,9 @@ export default function AddDestinationModal({ isOpen, onClose, onSave, target = 
                   <div className="flex-1 relative">
                     <input 
                       value={formData.secretKey}
-                      readOnly
+                      onChange={(e) => handleFieldChange('secretKey', e.target.value)}
                       type={showSecretKey ? "text" : "password"}
-                      className="w-full bg-white border-2 border-slate-200 rounded-lg pl-4 pr-12 py-3 text-xs font-mono font-bold text-slate-600 outline-none"
+                      className="w-full bg-white border-2 border-slate-200 rounded-lg pl-4 pr-12 py-3 text-xs font-mono font-bold text-slate-600 outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-100"
                     />
                     <button
                       type="button"
