@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import authService from '../../services/authService';
 import notificationService from '../../services/notificationService';
 import socketService from '../../services/socketService';
+import useNotificationSound from '../../hooks/useNotificationSound';
 
 /* ─── helpers ─── */
 const timeAgo = (dateStr) => {
@@ -35,6 +36,7 @@ const Navbar = ({ onSearch }) => {
   const [searchTerm,  setSearchTerm]    = useState('');
   const searchRef = useRef(null);
   const navigate  = useNavigate();
+  const playSound = useNotificationSound();
 
   const userStr = localStorage.getItem('user');
   const user    = userStr ? JSON.parse(userStr) : null;
@@ -48,9 +50,23 @@ const Navbar = ({ onSearch }) => {
   useEffect(() => {
     if (!user) return;
     fetchNotifications();
-    socketService.connect(user.id);
-    socketService.onNotification(n => setNotifications(prev => [n, ...prev]));
-    return () => socketService.disconnect();
+
+    const handleNotification = (n) => {
+      setNotifications(prev => [n, ...prev]);
+      playSound();
+    };
+
+    // Use a small delay to avoid WebSocket connection/disconnection warnings 
+    // caused by React StrictMode double-mounting in development.
+    const timer = setTimeout(() => {
+      socketService.connect(user.id);
+      socketService.onNotification(handleNotification);
+    }, 100);
+
+    return () => {
+      clearTimeout(timer);
+      socketService.disconnect();
+    };
   }, []);
 
   const fetchNotifications = async () => {

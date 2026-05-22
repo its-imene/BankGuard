@@ -25,6 +25,16 @@ export const userService = {
     const response = await api.post(`/user/confirm/${token}`);
     return response.data;
   },
+
+  getMe: async () => {
+    const response = await api.get('/user/me');
+    return response.data;
+  },
+
+  updateMe: async (userData) => {
+    const response = await api.patch('/user/me', userData);
+    return response.data;
+  },
 };
 
 export default userService;

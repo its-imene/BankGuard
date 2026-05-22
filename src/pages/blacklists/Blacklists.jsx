@@ -76,7 +76,7 @@ const Blacklists = () => {
 
   const updateBlacklist = async (updatedItem) => {
     try {
-      const { id, createdAt, updatedAt, entityProfiles, evidenceDocuments, reviews, createdBy, createdById, ...dto } = updatedItem;
+      const { id, createdAt, updatedAt, entityProfiles, evidenceDocuments, reviews, createdBy, createdById, fileHash, ...dto } = updatedItem;
       await blacklistService.updateBlacklist(id, dto);
       toast.success('Batch updated successfully');
       await fetchBlacklists();
@@ -125,13 +125,20 @@ const Blacklists = () => {
             <p className="text-sm text-slate-500">Manage and upload regulatory blacklists</p>
           </div>
         </div>
-        <button
-          onClick={() => setShowMethodSelector(true)}
-          className="flex items-center gap-2 bg-[#031124] hover:bg-slate-800 text-white px-5 py-2.5 rounded-xl font-semibold text-sm transition-all shadow-lg shadow-slate-900/20 active:scale-95 self-start sm:self-auto"
-        >
-          <Plus size={16} />
-          Add New Blacklist
-        </button>
+        {(() => {
+          const user = JSON.parse(localStorage.getItem('user') || '{}');
+          const role = user?.role?.toUpperCase();
+          if (role === 'VERIFICATION') return null;
+          return (
+            <button
+              onClick={() => setShowMethodSelector(true)}
+              className="flex items-center gap-2 bg-[#031124] hover:bg-slate-800 text-white px-5 py-2.5 rounded-xl font-semibold text-sm transition-all shadow-lg shadow-slate-900/20 active:scale-95 self-start sm:self-auto"
+            >
+              <Plus size={16} />
+              Add New Blacklist
+            </button>
+          );
+        })()}
       </div>
 
       {/* Stats bar */}

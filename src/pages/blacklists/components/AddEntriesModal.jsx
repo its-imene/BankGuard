@@ -43,7 +43,7 @@ const FIELD_LABELS = {
   incorporationDate: 'Incorp. Date', industry: 'Industry',
 };
 
-const DATE_FIELDS = new Set(['dob','listedOn','ukSanctionsListDate','lastUpdated']);
+const DATE_FIELDS = new Set(['dob','listedOn','ukSanctionsListDate','lastUpdated','incorporationDate']);
 
 const FIELD_EXAMPLES = {
   blacklistId: 'e.g. OFAC-2026-001',
@@ -362,6 +362,26 @@ const AddEntriesModal = ({ onClose, onSave, initialData }) => {
       toast.error("Please provide at least one name for the entry."); 
       return; 
     }
+
+    // Validate date fields format if they have values
+    const dateFields = ['dob', 'listedOn', 'ukSanctionsListDate', 'lastUpdated', 'incorporationDate'];
+    const invalidFields = [];
+    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+    
+    dateFields.forEach(f => {
+      const val = data[f];
+      if (val && val.trim().length > 0) {
+        if (!dateRegex.test(val) || isNaN(Date.parse(val))) {
+          invalidFields.push(f);
+        }
+      }
+    });
+
+    if (invalidFields.length > 0) {
+      setCurrentEntryErrors(invalidFields);
+      toast.error("Please provide valid dates in YYYY-MM-DD format.");
+      return;
+    }
     
     if (editingId) {
       setEntries(prev => prev.map(e => e.id === editingId ? { ...data, id: editingId, _isDirty: true, errors: [] } : e));
@@ -485,7 +505,7 @@ const AddEntriesModal = ({ onClose, onSave, initialData }) => {
             </div>
 
             {/* AI MAGIC BAR */}
-            <div className="p-4 bg-gradient-to-r from-emerald-50 to-teal-50 border-b border-emerald-100">
+            {/* <div className="p-4 bg-gradient-to-r from-emerald-50 to-teal-50 border-b border-emerald-100">
               <div className="flex items-center gap-2 mb-2">
                 <Sparkles size={14} className="text-emerald-600" />
                 <span className="text-[10px] font-bold text-emerald-800 uppercase tracking-wider">AI Magic Fill</span>
@@ -519,7 +539,7 @@ const AddEntriesModal = ({ onClose, onSave, initialData }) => {
               <p className="mt-2 text-[9px] text-emerald-600 italic leading-tight">
                 "His name is Ahmed, lives in Algiers, passport B123..."
               </p>
-            </div>
+            </div> */}
 
             {/* Form Fields */}
             <div id="entry-form-scroll" className="flex-1 overflow-y-auto p-4 space-y-4">
@@ -545,12 +565,12 @@ const AddEntriesModal = ({ onClose, onSave, initialData }) => {
               <Section title="Demographics & Type" color="text-blue-500" bg="bg-blue-50/20 border-blue-100">
                 <div className="grid grid-cols-2 gap-2">
                   {renderField('entityType', el => refs.current.entityType = el, false, { options: [
-                       { label: 'Individual (IND)', value: 'IND' },
+                       { label: 'Individual (IND)', value: 'INDIVIDUAL' },
                        { label: 'Organization/Company', value: 'ORGANIZATION' },
                        { label: 'Vessel/Ship', value: 'VESSEL' }
                      ] })}
                   {renderField('nationality', el => refs.current.nationality = el)}
-                  {renderField('dob', el => refs.current.dob = el)}
+                  {renderField('dob', el => refs.current.dob = el, currentEntryErrors.includes('dob'))}
                   {renderField('townOfBirth', el => refs.current.townOfBirth = el)}
                   {renderField('countryOfBirth', el => refs.current.countryOfBirth = el)}
                 </div>
@@ -560,7 +580,7 @@ const AddEntriesModal = ({ onClose, onSave, initialData }) => {
                 <div className="grid grid-cols-2 gap-2">
                   {renderField('registrationNumber', el => refs.current.registrationNumber = el)}
                   {renderField('registrationCountry', el => refs.current.registrationCountry = el)}
-                  {renderField('incorporationDate', el => refs.current.incorporationDate = el)}
+                  {renderField('incorporationDate', el => refs.current.incorporationDate = el, currentEntryErrors.includes('incorporationDate'))}
                   {renderField('industry', el => refs.current.industry = el)}
                 </div>
               </Section>
@@ -592,9 +612,9 @@ const AddEntriesModal = ({ onClose, onSave, initialData }) => {
                   {renderField('regime', el => refs.current.regime = el)}
                   {renderField('aliasType', el => refs.current.aliasType = el)}
                   {renderField('aliasQuality', el => refs.current.aliasQuality = el)}
-                  {renderField('listedOn', el => refs.current.listedOn = el)}
-                  {renderField('ukSanctionsListDate', el => refs.current.ukSanctionsListDate = el)}
-                  {renderField('lastUpdated', el => refs.current.lastUpdated = el)}
+                  {renderField('listedOn', el => refs.current.listedOn = el, currentEntryErrors.includes('listedOn'))}
+                  {renderField('ukSanctionsListDate', el => refs.current.ukSanctionsListDate = el, currentEntryErrors.includes('ukSanctionsListDate'))}
+                  {renderField('lastUpdated', el => refs.current.lastUpdated = el, currentEntryErrors.includes('lastUpdated'))}
                 </div>
                 {renderField('groupId', el => refs.current.groupId = el)}
                 {renderField('otherInfo', el => refs.current.otherInfo = el)}

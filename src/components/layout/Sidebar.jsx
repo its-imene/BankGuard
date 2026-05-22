@@ -83,6 +83,14 @@ const Sidebar = () => {
   const { user, logout } = useAuthContext();
   const navigate = useNavigate();
 
+  const role = user?.role?.toUpperCase();
+  const allowedNavItems = NAV_ITEMS.filter(item => {
+    if (role === 'VERIFICATION' || role === 'DATA_ENTRY') {
+      return item.to === '/app/blacklists' || item.to === '/app/settings';
+    }
+    return true;
+  });
+
   const handleLogout = () => {
     logout();
     navigate('/login');
@@ -157,7 +165,7 @@ const Sidebar = () => {
               Main Menu
             </p>
           )}
-          {NAV_ITEMS.map((item) => (
+          {allowedNavItems.map((item) => (
             <NavItem key={item.to} {...item} collapsed={collapsed} />
           ))}
         </div>
