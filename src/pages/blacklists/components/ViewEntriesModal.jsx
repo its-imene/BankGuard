@@ -262,6 +262,8 @@ const ViewEntriesModal = ({ item, onClose, onUpdateBatch }) => {
   const [uploadingId,   setUploadingId]   = useState(null);
   const [reviewComment, setReviewComment] = useState('');
   const [isSubmitting,  setIsSubmitting]  = useState(false);
+  const loggedInUser = JSON.parse(localStorage.getItem('user') || '{}');
+  const showReviewActions = loggedInUser?.role !== 'DATA_ENTRY';
 
   useEffect(() => {
     if (item?.id) fetchEntries();
@@ -326,7 +328,7 @@ const ViewEntriesModal = ({ item, onClose, onUpdateBatch }) => {
         sanctionedEntityId: item.id,
         reviewerId: user?.id,
         decision,
-        comment: reviewComment,
+        comment: reviewComment?.trim() || undefined,
       });
       await onUpdateBatch({
         ...item,
@@ -363,7 +365,18 @@ const ViewEntriesModal = ({ item, onClose, onUpdateBatch }) => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-md p-2 sm:p-4">
-      <div className="bg-white rounded-3xl shadow-3xl w-full max-w-[95vw] h-[92vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-300">
+      <div className="relative bg-white rounded-3xl shadow-3xl w-full max-w-[95vw] h-[92vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-300">
+        {isSubmitting && (
+          <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex flex-col items-center justify-center gap-4 animate-in fade-in duration-200">
+            <div className="bg-white p-8 rounded-3xl shadow-2xl flex flex-col items-center gap-4 max-w-sm text-center border border-slate-100 animate-in zoom-in-95 duration-300">
+              <Loader2 className="h-10 w-10 text-blue-600 animate-spin" />
+              <div>
+                <h3 className="text-base font-extrabold text-slate-900">Processing Request</h3>
+                <p className="text-xs text-slate-500 mt-1">Please wait while the system updates the batch status and logs the review.</p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* ── Header ── */}
         <div className="px-8 py-6 border-b border-slate-100 flex flex-wrap gap-4 items-center justify-between bg-white shrink-0">
@@ -389,35 +402,39 @@ const ViewEntriesModal = ({ item, onClose, onUpdateBatch }) => {
           </div>
 
           <div className="flex items-center flex-wrap gap-3">
-            <div className="relative">
-              <input
-                type="text"
-                placeholder="Review comment / reason…"
-                value={reviewComment}
-                onChange={e => setReviewComment(e.target.value)}
-                className="text-sm px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-400 w-64 transition-all"
-              />
-            </div>
+            {showReviewActions && (
+              <>
+                <div className="relative">
+                  <input
+                    type="text"
+                    placeholder="Review comment (optional)…"
+                    value={reviewComment}
+                    onChange={e => setReviewComment(e.target.value)}
+                    className="text-sm px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-400 w-64 transition-all"
+                  />
+                </div>
 
-            <div className="flex items-center gap-2 bg-slate-100 p-1 rounded-xl">
-              <button
-                onClick={() => handleReview('REJECTED')}
-                disabled={isSubmitting}
-                className="flex items-center gap-2 px-5 py-2.5 bg-white text-red-600 hover:bg-red-50 rounded-lg text-xs font-black uppercase tracking-wider transition-all disabled:opacity-50"
-              >
-                <XCircle size={14} /> Reject
-              </button>
+                <div className="flex items-center gap-2 bg-slate-100 p-1 rounded-xl">
+                  <button
+                    onClick={() => handleReview('REJECTED')}
+                    disabled={isSubmitting}
+                    className="flex items-center gap-2 px-5 py-2.5 bg-white text-red-600 hover:bg-red-50 rounded-lg text-xs font-black uppercase tracking-wider transition-all disabled:opacity-50"
+                  >
+                    <XCircle size={14} /> Reject
+                  </button>
 
-              <button
-                onClick={() => handleReview('APPROVED')}
-                disabled={isSubmitting}
-                className="flex items-center gap-2 px-5 py-2.5 bg-emerald-600 text-white hover:bg-emerald-700 rounded-lg text-xs font-black uppercase tracking-wider shadow-lg shadow-emerald-600/20 transition-all disabled:opacity-50"
-              >
-                <CheckCircle2 size={14} /> Approve
-              </button>
-            </div>
+                  <button
+                    onClick={() => handleReview('APPROVED')}
+                    disabled={isSubmitting}
+                    className="flex items-center gap-2 px-5 py-2.5 bg-emerald-600 text-white hover:bg-emerald-700 rounded-lg text-xs font-black uppercase tracking-wider shadow-lg shadow-emerald-600/20 transition-all disabled:opacity-50"
+                  >
+                    <CheckCircle2 size={14} /> Approve
+                  </button>
+                </div>
 
-            <div className="w-px h-8 bg-slate-200 mx-1" />
+                <div className="w-px h-8 bg-slate-200 mx-1" />
+              </>
+            )}
 
             <button
               onClick={handleExport}

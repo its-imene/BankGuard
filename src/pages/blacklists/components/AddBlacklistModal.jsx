@@ -18,8 +18,8 @@ const FormRow = ({ label, required, children }) => (
   </div>
 );
 
-const inputCls = `w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-medium
-  outline-none focus:border-[#031124] focus:ring-2 focus:ring-[#031124]/10 transition-all
+const inputCls = `w-full border border-slate-200 rounded-xl px-4 h-11 text-sm font-medium
+  outline-none focus:border-[#031124] focus:ring-4 focus:ring-[#031124]/10 transition-all
   bg-white text-slate-800 placeholder:text-slate-400`;
 
 const AddBlacklistModal = ({ onClose, onSave }) => {
@@ -253,10 +253,10 @@ const AddBlacklistModal = ({ onClose, onSave }) => {
                   <div className="text-center">
                     <CloudUpload size={32} className="text-slate-300 mx-auto mb-2" strokeWidth={1} />
                     <p className="text-xs font-bold text-slate-600">Deep Drop File</p>
-                    <p className="text-[10px] text-slate-400 mt-1">Excel, XML or PDF · Max 10MB</p>
+                    <p className="text-[10px] text-slate-400 mt-1">Excel. Max 10MB</p>
                   </div>
                 )}
-                <input type="file" className="hidden" onChange={e => handleFile(e.target.files[0])} accept=".xls,.xlsx,.xml,.hmt,.pdf" />
+                <input type="file" className="hidden" onChange={e => handleFile(e.target.files[0])} accept=".xls,.xlsx,.xml,.hmt" />
               </label>
             </div>
           ) : (
@@ -316,14 +316,14 @@ const AddBlacklistModal = ({ onClose, onSave }) => {
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 py-3 border border-slate-200 text-slate-500 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-slate-50 transition-all"
+              className="flex-1 h-11 border border-slate-200 text-slate-500 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-slate-50 transition-all focus-visible:ring-4 focus-visible:ring-slate-200"
             >
               Abort
             </button>
             <button
               type="submit"
               disabled={isUploading}
-              className="flex-1 py-3 bg-[#031124] text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-slate-800 transition-all shadow-xl shadow-[#031124]/20 disabled:opacity-50 flex items-center justify-center gap-2"
+              className="flex-1 h-11 bg-[#031124] text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-slate-800 transition-all shadow-xl shadow-[#031124]/20 disabled:opacity-50 flex items-center justify-center gap-2 focus-visible:ring-4 focus-visible:ring-slate-900/40"
             >
               {isUploading ? <Loader2 size={14} className="animate-spin" /> : <Shield size={14} className="text-orange-400" />}
               {isUploading ? 'Executing…' : 'Finalize Import'}

@@ -60,7 +60,7 @@ const NavItem = ({ icon: Icon, label, to, collapsed }) => {
           <Icon
             size={18}
             strokeWidth={isActive ? 2.2 : 1.8}
-            className="shrink-0 transition-transform duration-200 group-hover:scale-105"
+            className={`shrink-0 transition-all duration-300 ${isActive ? '' : 'group-hover:scale-110 group-hover:text-white'}`}
           />
           {!collapsed && (
             <span className="text-sm font-medium leading-none">{label}</span>
@@ -82,6 +82,14 @@ const Sidebar = () => {
   const sidebarRef = useRef(null);
   const { user, logout } = useAuthContext();
   const navigate = useNavigate();
+
+  const role = user?.role?.toUpperCase();
+  const allowedNavItems = NAV_ITEMS.filter(item => {
+    if (role === 'VERIFICATION' || role === 'DATA_ENTRY') {
+      return item.to === '/app/blacklists' || item.to === '/app/settings';
+    }
+    return true;
+  });
 
   const handleLogout = () => {
     logout();
@@ -157,7 +165,7 @@ const Sidebar = () => {
               Main Menu
             </p>
           )}
-          {NAV_ITEMS.map((item) => (
+          {allowedNavItems.map((item) => (
             <NavItem key={item.to} {...item} collapsed={collapsed} />
           ))}
         </div>

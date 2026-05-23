@@ -58,7 +58,7 @@ const BlacklistsTable = ({ data, currentFilter, onFilterChange, onEdit, onDelete
         <div className="relative">
           <button
             onClick={() => setIsFilterOpen(o => !o)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all border ${
+            className={`flex items-center gap-1.5 px-4 h-10 rounded-xl text-xs font-semibold transition-all border focus-visible:ring-2 focus-visible:ring-slate-900/10 ${
               currentFilter !== 'all'
                 ? 'border-orange-200 text-orange-600 bg-orange-50'
                 : 'border-slate-200 text-slate-500 hover:bg-slate-50'
@@ -129,20 +129,29 @@ const BlacklistsTable = ({ data, currentFilter, onFilterChange, onEdit, onDelete
                   </td>
                   <td className="px-5 py-3.5">
                     <div className="flex justify-center items-center gap-1">
-                      {[
-                        { icon: FileText, action: () => onView(row),    title: 'View Entries', hover: 'hover:text-blue-600 hover:bg-blue-50'   },
-                        { icon: Edit3,    action: () => onEdit(row),    title: 'Edit Batch',   hover: 'hover:text-amber-500 hover:bg-amber-50' },
-                        { icon: Trash2,   action: () => onDelete(row.id), title: 'Delete',     hover: 'hover:text-red-600 hover:bg-red-50'     },
-                      ].map(({ icon: Icon, action, title, hover }) => (
-                        <button
-                          key={title}
-                          onClick={action}
-                          title={title}
-                          className={`p-2 rounded-lg text-slate-300 group-hover:text-slate-400 transition-all ${hover}`}
-                        >
-                          <Icon size={15} />
-                        </button>
-                      ))}
+                      {(() => {
+                        const user = JSON.parse(localStorage.getItem('user') || '{}');
+                        const role = user?.role?.toUpperCase();
+                        const rowActions = [
+                          { icon: FileText, action: () => onView(row), title: 'View Entries', hover: 'hover:text-blue-600 hover:bg-blue-50' }
+                        ];
+                        if (role !== 'VERIFICATION') {
+                          rowActions.push({ icon: Edit3, action: () => onEdit(row), title: 'Edit Batch', hover: 'hover:text-amber-500 hover:bg-amber-50' });
+                        }
+                        if (role === 'SUPER_ADMIN' || role === 'ADMIN' || !role) {
+                          rowActions.push({ icon: Trash2, action: () => onDelete(row.id), title: 'Delete', hover: 'hover:text-red-600 hover:bg-red-50' });
+                        }
+                        return rowActions.map(({ icon: Icon, action, title, hover }) => (
+                          <button
+                            key={title}
+                            onClick={action}
+                            title={title}
+                            className={`p-2 rounded-lg text-slate-300 group-hover:text-slate-400 transition-all ${hover}`}
+                          >
+                            <Icon size={15} />
+                          </button>
+                        ));
+                      })()}
                       <button
                         onClick={() => handleDownload(row)}
                         disabled={isDownloadingId === row.id}

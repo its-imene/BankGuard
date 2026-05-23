@@ -1,96 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
-import { Trash2, CheckCircle2, AlertCircle } from "lucide-react";
+import { AlertCircle } from "lucide-react";
 import LogsTable from "./components/AuditTable";
 import auditService from "../../services/auditService";
-
-// ── Delete confirmation modal
-function DeleteModal({ row, isLoading, onConfirm, onCancel }) {
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      {/* Backdrop */}
-      <div 
-        className="absolute inset-0 bg-slate-900/30 backdrop-blur-sm" 
-        onClick={onCancel}
-        role="button"
-        tabIndex={0}
-        onKeyDown={(e) => e.key === "Escape" && onCancel()}
-      />
-
-      {/* Modal */}
-      <div className="relative bg-white rounded-2xl shadow-xl border border-slate-200 w-full max-w-sm mx-4 p-6">
-        {/* Icon */}
-        <div className="flex justify-center mb-4">
-          <div className="w-12 h-12 rounded-full bg-red-50 flex items-center justify-center">
-            <Trash2 size={22} className="text-red-500" />
-          </div>
-        </div>
-
-        {/* Text */}
-        <h3 className="text-center text-slate-800 font-bold text-base mb-1">Delete this log?</h3>
-        <p className="text-center text-slate-500 text-sm mb-6">
-          You are about to delete the log for{" "}
-          <span className="font-semibold text-slate-700">{row.user?.firstName || row.user?.name || 'System'}</span>.
-          <br />This action cannot be undone.
-        </p>
-
-        {/* Buttons */}
-        <div className="flex gap-3">
-          <button
-            onClick={onCancel}
-            disabled={isLoading}
-            className="flex-1 border border-slate-200 text-slate-600 text-sm font-medium py-2.5 rounded-xl hover:bg-slate-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={onConfirm}
-            disabled={isLoading}
-            className="flex-1 bg-red-500 hover:bg-red-600 text-white text-sm font-medium py-2.5 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-          >
-            {isLoading ? (
-              <>
-                <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                Deleting...
-              </>
-            ) : (
-              "Yes, Delete"
-            )}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ── Toast notification with auto-dismiss
-function Toast({ type = "success", name, onDone }) {
-  useEffect(() => {
-    const t = setTimeout(onDone, 2800);
-    return () => clearTimeout(t);
-  }, [onDone]);
-
-  const config = {
-    success: {
-      bg: "bg-slate-800",
-      icon: <CheckCircle2 size={17} className="text-emerald-400 flex-shrink-0" />,
-      text: `Log for ${name} was deleted`,
-    },
-    error: {
-      bg: "bg-red-900",
-      icon: <AlertCircle size={17} className="text-red-300 flex-shrink-0" />,
-      text: `Failed to delete log for ${name}`,
-    },
-  };
-
-  const current = config[type];
-
-  return (
-    <div className={`fixed bottom-6 right-6 z-50 flex items-center gap-3 ${current.bg} text-white text-sm px-5 py-3 rounded-xl shadow-xl animate-in fade-in slide-in-from-bottom-4 duration-300`}>
-      {current.icon}
-      <span><span className="font-semibold">{name}</span> — {current.text}</span>
-    </div>
-  );
-}
 
 // ── Error state component
 function ErrorState({ message, onRetry }) {
@@ -108,17 +19,12 @@ function ErrorState({ message, onRetry }) {
   );
 }
 
-// ── Main page 
+// ── Main page
 const Audit = () => {
   const [logs, setLogs] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [filterStatus, setFilterStatus] = useState("all");
-  const [pendingDelete, setPendingDelete] = useState(null);
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [toast, setToast] = useState(null);
 
-  // Fetch logs with improved error handling
   const fetchLogs = useCallback(async () => {
     setIsLoading(true);
     setError(null);
@@ -136,27 +42,6 @@ const Audit = () => {
   useEffect(() => {
     fetchLogs();
   }, [fetchLogs]);
-
-  const handleDeleteConfirm = useCallback(async () => {
-    if (!pendingDelete) return;
-
-    setIsDeleting(true);
-    try {
-      // Optional: Uncomment if your backend supports deletion
-      // await auditService.deleteAuditLog(pendingDelete.id);
-      
-      const name = pendingDelete.user?.firstName || pendingDelete.user?.name || 'System';
-      setLogs(prev => prev.filter(l => l.id !== pendingDelete.id));
-      setToast({ type: "success", name });
-      setPendingDelete(null);
-    } catch (err) {
-      console.error("Failed to delete log:", err);
-      const name = pendingDelete.user?.firstName || pendingDelete.user?.name || 'System';
-      setToast({ type: "error", name });
-    } finally {
-      setIsDeleting(false);
-    }
-  }, [pendingDelete]);
 
   if (isLoading && logs.length === 0) {
     return (
@@ -194,12 +79,7 @@ const Audit = () => {
 
       {/* Table or empty state */}
       {logs.length > 0 ? (
-        <LogsTable
-          data={logs}
-          currentFilter={filterStatus}
-          onFilterChange={setFilterStatus}
-          onDeleteRequest={(row) => setPendingDelete(row)}
-        />
+        <LogsTable data={logs} />
       ) : (
         !error && (
           <div className="rounded-2xl border border-slate-200 bg-white p-12 text-center">
@@ -207,27 +87,8 @@ const Audit = () => {
           </div>
         )
       )}
-
-      {/* Delete confirmation modal */}
-      {pendingDelete && (
-        <DeleteModal
-          row={pendingDelete}
-          isLoading={isDeleting}
-          onConfirm={handleDeleteConfirm}
-          onCancel={() => setPendingDelete(null)}
-        />
-      )}
-
-      {/* Toast */}
-      {toast && (
-        <Toast 
-          type={toast.type} 
-          name={toast.name} 
-          onDone={() => setToast(null)} 
-        />
-      )}
     </div>
   );
 };
 
-export default Audit;
+export default Audit;

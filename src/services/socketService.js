@@ -1,15 +1,24 @@
 import { io } from 'socket.io-client';
-
-const SOCKET_URL = import.meta.env.VITE_API_URL || 'https://sanctions-intelligence-management-system.onrender.com';
+import { API_URLS, getApiBaseUrl } from './api';
 
 class SocketService {
   socket = null;
+  urlIndex = 0;
 
   connect(userId) {
     if (this.socket) return;
 
-    this.socket = io(`${SOCKET_URL}/notifications`, {
+    const preferredUrl = getApiBaseUrl();
+    this.urlIndex = Math.max(API_URLS.indexOf(preferredUrl), 0);
+    this.connectToUrl(userId, API_URLS[this.urlIndex]);
+
+    return this.socket;
+  }
+
+  connectToUrl(userId, baseUrl) {
+    this.socket = io(`${baseUrl}/notifications`, {
       transports: ['websocket'],
+      reconnectionAttempts: 2,
     });
 
     this.socket.on('connect', () => {
@@ -22,7 +31,16 @@ class SocketService {
       console.log('Disconnected from notification socket');
     });
 
-    return this.socket;
+    this.socket.on('connect_error', () => {
+      const nextUrl = API_URLS[this.urlIndex + 1];
+      if (!nextUrl) return;
+
+      this.socket.disconnect();
+      this.socket = null;
+      this.urlIndex += 1;
+      console.warn(`Notification socket unavailable. Trying fallback API: ${nextUrl}`);
+      this.connectToUrl(userId, nextUrl);
+    });
   }
 
   disconnect() {
