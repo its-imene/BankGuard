@@ -13,7 +13,7 @@ import { useRef, useCallback } from 'react';
  *   playSound();           // plays using volume preference (or 0.7 default)
  *   playSound(0.5);        // plays at 50% volume overriding preference
  */
-const useNotificationSound = (src = '/sounds/mixkit-bell-notification-933.wav') => {
+const useNotificationSound = (src = '/sounds/mixkit-bell-notification-933.mp3') => {
   const audioRef = useRef(null);
 
   // Lazily create the Audio element on first call
