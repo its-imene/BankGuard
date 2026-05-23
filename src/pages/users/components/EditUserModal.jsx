@@ -7,7 +7,7 @@ const EditUserModal = ({ user, onSave, onClose }) => {
     lastName:  user.lastName  || "",
     userId:    user.id        || "",
     email:     user.email     || "",
-    role:      user.role      || "COMPLIANCE",
+    role:      user.role      || "DATA_ENTRY",
     status:    user.isConfirmed ? "active" : "inactive",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -115,12 +115,7 @@ const EditUserModal = ({ user, onSave, onClose }) => {
                 <label className="block text-sm font-medium text-slate-700 mb-1 leading-tight">Role</label>
                 <select name="role" value={form.role} onChange={handleChange}
                   className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-300 bg-white text-slate-600">
-                  <option value="SUPER_ADMIN">Super Admin</option>
                   <option value="ADMIN">Admin</option>
-                  <option value="COMPLIANCE">Compliance Officer</option>
-                  <option value="ACCOUNTS">Accounts</option>
-                  <option value="AUDITOR">Auditor</option>
-                  <option value="ANALYST">Analyst</option>
                   <option value="VERIFICATION">Verification</option>
                   <option value="DATA_ENTRY">Data Entry</option>
                 </select>

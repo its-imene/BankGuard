@@ -7,7 +7,7 @@ const AddUserModal = ({ onSave, onClose }) => {
     lastName: "",
     email: "",
     phone: "",
-    role: "COMPLIANCE", // Using RoleEnum values
+    role: "DATA_ENTRY", // Using RoleEnum values
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -96,12 +96,7 @@ const AddUserModal = ({ onSave, onClose }) => {
                 onChange={handleChange}
                 className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#ff6b6b] focus:border-[#ff6b6b] outline-none transition-all bg-white"
               >
-                <option value="SUPER_ADMIN">Super Admin</option>
                 <option value="ADMIN">Admin</option>
-                <option value="COMPLIANCE">Compliance Officer</option>
-                <option value="ACCOUNTS">Accounts</option>
-                <option value="AUDITOR">Auditor</option>
-                <option value="ANALYST">Analyst</option>
                 <option value="VERIFICATION">Verification</option>
                 <option value="DATA_ENTRY">Data Entry</option>
               </select>

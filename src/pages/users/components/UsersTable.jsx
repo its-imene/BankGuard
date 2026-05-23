@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Edit2, Trash2, Search, Check, Filter } from "lucide-react";
 
-const ROLES = ["all", "SUPER_ADMIN", "ADMIN", "COMPLIANCE", "ACCOUNTS", "AUDITOR", "ANALYST", "VERIFICATION", "DATA_ENTRY"];
+const ROLES = ["all", "SUPER_ADMIN", "ADMIN", "VERIFICATION", "DATA_ENTRY"];
 
 const getRolePill = (role) => {
   switch (role?.toUpperCase()) {
