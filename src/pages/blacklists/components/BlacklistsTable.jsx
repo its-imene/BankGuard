@@ -58,7 +58,7 @@ const BlacklistsTable = ({ data, currentFilter, onFilterChange, onEdit, onDelete
         <div className="relative">
           <button
             onClick={() => setIsFilterOpen(o => !o)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all border ${
+            className={`flex items-center gap-1.5 px-4 h-10 rounded-xl text-xs font-semibold transition-all border focus-visible:ring-2 focus-visible:ring-slate-900/10 ${
               currentFilter !== 'all'
                 ? 'border-orange-200 text-orange-600 bg-orange-50'
                 : 'border-slate-200 text-slate-500 hover:bg-slate-50'

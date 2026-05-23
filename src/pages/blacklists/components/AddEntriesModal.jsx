@@ -11,6 +11,8 @@ import { entriesService } from '../../../services/entriesService';
 import { reviewService }  from '../../../services/reviewService';
 
 const COUNTRY_FIELDS = new Set(['nationality', 'countryOfBirth', 'registrationCountry', 'country']);
+const NAME_FIELDS = ['fullName','name1','name2','name3','name4','name5','name6','nameNonLatin'];
+const REQUIRED_BATCH_FIELDS = new Set(['blacklistId', 'source']);
 
 const ALL_FIELDS = [
   'fullName', 'name1','name2','name3','name4','name5','name6',
@@ -93,48 +95,107 @@ const getIntlCountryOptions = () => {
 const TABLE_COLS = [...ALL_FIELDS];
 
 /* ─── Single uncontrolled field ─── */
-const Field = ({ fieldKey, inputRef, defaultValue, hasError, options, placeholder }) => (
-  <div className="flex flex-col gap-1 group">
-    <label className={`text-[9px] font-bold uppercase tracking-wider transition-colors duration-500 ${
-      hasError ? 'text-red-500' : 'text-slate-400 group-focus-within:text-[#031124]'
-    }`}>
-      {FIELD_LABELS[fieldKey] || fieldKey}
-      {hasError && <span className="ml-1 text-red-400">· Error</span>}
-    </label>
-    {options ? (
-      <select
-        ref={inputRef}
-        id={`field-${fieldKey}`}
-        defaultValue={defaultValue || ''}
-        className={`border rounded-lg px-3 py-2 text-xs font-medium outline-none transition-all duration-500 ${
-          hasError
-            ? 'border-red-300 bg-red-50 focus:border-red-400 focus:ring-1 focus:ring-red-300 text-red-900'
-            : 'border-slate-200 bg-white text-slate-800 focus:border-[#031124] focus:ring-1 focus:ring-[#031124]/10'
-        }`}
-      >
-        <option value="">{placeholder || '-- Select --'}</option>
-        {options.map(opt => (
-          <option key={typeof opt === 'string' ? opt : opt.value} value={typeof opt === 'string' ? opt : opt.value}>
-            {typeof opt === 'string' ? opt : opt.label}
-          </option>
-        ))}
-      </select>
-    ) : (
-      <input
-        ref={inputRef}
-        id={`field-${fieldKey}`}
-        type={DATE_FIELDS.has(fieldKey) ? 'date' : 'text'}
-        defaultValue={defaultValue || ''}
-        placeholder={placeholder}
-        className={`border rounded-lg px-3 py-2 text-xs font-medium outline-none transition-all duration-500 ${
-          hasError
-            ? 'border-red-300 bg-red-50 focus:border-red-400 focus:ring-1 focus:ring-red-300 text-red-900'
-            : 'border-slate-200 bg-white text-slate-800 focus:border-[#031124] focus:ring-1 focus:ring-[#031124]/10'
-        }`}
-      />
-    )}
-  </div>
-);
+const Field = ({ fieldKey, inputRef, defaultValue, hasError, options, placeholder, onChange, isRequired, helperText, disabled }) => {
+  const hasOptions = !!options;
+  
+  let isInOptions = false;
+  if (hasOptions && defaultValue) {
+    isInOptions = options.some(opt => (typeof opt === 'string' ? opt : opt.value) === defaultValue);
+  }
+
+  const [isOther, setIsOther] = useState(hasOptions && defaultValue && !isInOptions);
+
+  const handleSelectChange = (e) => {
+    if (e.target.value === 'Other') {
+      setIsOther(true);
+      if (onChange) onChange(e);
+    } else {
+      setIsOther(false);
+      if (onChange) onChange(e);
+    }
+  };
+
+  const inputClasses = `border rounded-lg px-3 py-2 text-xs font-medium outline-none transition-all duration-500 ${
+    disabled
+      ? 'border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed'
+      : hasError
+        ? 'border-red-300 bg-red-50 focus:border-red-400 focus:ring-1 focus:ring-red-300 text-red-900'
+        : 'border-slate-200 bg-white text-slate-800 focus:border-[#031124] focus:ring-1 focus:ring-[#031124]/10'
+  }`;
+
+  return (
+    <div className="flex flex-col gap-1 group">
+      <label className={`text-[9px] font-bold uppercase tracking-wider transition-colors duration-500 ${
+        hasError ? 'text-red-500' : 'text-slate-400 group-focus-within:text-[#031124]'
+      }`}>
+        {FIELD_LABELS[fieldKey] || fieldKey}
+        {isRequired && <span className="ml-1 text-[8px] font-bold text-amber-500">Required</span>}
+        {hasError && <span className="ml-1 text-red-400">· Error</span>}
+      </label>
+      {options ? (
+        <div className="flex flex-col gap-2">
+          <select
+            ref={isOther ? null : inputRef}
+            id={`field-${fieldKey}`}
+            defaultValue={isOther ? 'Other' : (defaultValue || '')}
+            onChange={handleSelectChange}
+            aria-required={isRequired || undefined}
+            disabled={disabled}
+            aria-disabled={disabled || undefined}
+            className={inputClasses}
+          >
+            <option value="" disabled>{placeholder || '-- Select --'}</option>
+            {options.map(opt => (
+              <option key={typeof opt === 'string' ? opt : opt.value} value={typeof opt === 'string' ? opt : opt.value}>
+                {typeof opt === 'string' ? opt : opt.label}
+              </option>
+            ))}
+          </select>
+          {isOther && (
+            <div className="relative animate-in slide-in-from-top-1 duration-200">
+              <input
+                ref={inputRef}
+                type="text"
+                defaultValue={!isInOptions ? defaultValue : ''}
+                placeholder={`Specify custom ${FIELD_LABELS[fieldKey]?.toLowerCase() || fieldKey}...`}
+                onChange={onChange}
+                autoFocus
+                className={`${inputClasses} w-full pr-8`}
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  setIsOther(false);
+                  if (inputRef && inputRef.current) inputRef.current.value = '';
+                }}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-red-500 p-1"
+                title="Cancel custom value"
+              >
+                <X size={12} />
+              </button>
+            </div>
+          )}
+        </div>
+      ) : (
+        <input
+          ref={inputRef}
+          id={`field-${fieldKey}`}
+          type={DATE_FIELDS.has(fieldKey) ? 'date' : 'text'}
+          defaultValue={defaultValue || ''}
+          placeholder={placeholder}
+          onChange={onChange}
+          aria-required={isRequired || undefined}
+          disabled={disabled}
+          aria-disabled={disabled || undefined}
+          className={inputClasses}
+        />
+      )}
+      {helperText && (
+        <p className="text-[10px] text-slate-400 leading-tight">{helperText}</p>
+      )}
+    </div>
+  );
+};
 
 /* ─── Section wrapper ─── */
 const Section = ({ title, color = 'text-slate-400', bg, children }) => (
@@ -142,6 +203,14 @@ const Section = ({ title, color = 'text-slate-400', bg, children }) => (
     <h4 className={`text-[9px] font-black uppercase tracking-widest ${color}`}>{title}</h4>
     {children}
   </div>
+);
+
+const StatusPill = ({ label, ok, value }) => (
+  <span className={`text-[8px] uppercase tracking-widest font-black px-2 py-1 rounded-full border ${
+    ok ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-slate-50 text-slate-400 border-slate-100'
+  }`}>
+    {label}: {value || (ok ? 'Ready' : 'Missing')}
+  </span>
 );
 
 /* ─── Preview table ─── */
@@ -199,6 +268,7 @@ const TablePreview = memo(({ entries, onEdit, onDelete, editingId }) => (
 
 /* ─── Main Modal ─── */
 const AddEntriesModal = ({ onClose, onSave, initialData }) => {
+  const isEditMode = Boolean(initialData?.id);
   const [entries,            setEntries]            = useState(initialData?.manualData || []);
   const [editingId,          setEditingId]          = useState(null);
   const [isLoading,          setIsLoading]          = useState(false);
@@ -206,36 +276,32 @@ const AddEntriesModal = ({ onClose, onSave, initialData }) => {
   const [saveError,          setSaveError]          = useState(null);
   const [rejectionReason,    setRejectionReason]    = useState(null);
   const [currentEntryErrors, setCurrentEntryErrors] = useState([]);
+  const [batchMeta,          setBatchMeta]          = useState({
+    blacklistId: initialData?.blacklistId || '',
+    source: initialData?.source || '',
+  });
+  const [hasNameInput,       setHasNameInput]       = useState(false);
+  const [autoGenerateId,     setAutoGenerateId]     = useState(!isEditMode);
+  const [formKey,            setFormKey]            = useState(0);
 
   // AI & Voice State
   const [magicText, setMagicText] = useState("");
   const [isExtracting, setIsExtracting] = useState(false);
   const [isListening, setIsListening] = useState(false);
   
-  // Resizer state
-  const [leftWidth, setLeftWidth] = useState(380);
   const [countryOptions, setCountryOptions] = useState([]);
 
-  const startResize = useCallback((e) => {
-    e.preventDefault();
-    const startX = e.clientX;
-    const startWidth = leftWidth;
-
-    const onMouseMove = (moveEvent) => {
-      const newWidth = Math.max(300, Math.min(800, startWidth + (moveEvent.clientX - startX)));
-      setLeftWidth(newWidth);
-    };
-
-    const onMouseUp = () => {
-      document.removeEventListener('mousemove', onMouseMove);
-      document.removeEventListener('mouseup', onMouseUp);
-    };
-
-    document.addEventListener('mousemove', onMouseMove);
-    document.addEventListener('mouseup', onMouseUp);
-  }, [leftWidth]);
-
   const refs = useRef({});
+
+  useEffect(() => {
+    if (initialData?.blacklistId || initialData?.source) {
+      setBatchMeta({
+        blacklistId: initialData?.blacklistId || '',
+        source: initialData?.source || '',
+      });
+    }
+    setAutoGenerateId(!initialData?.id);
+  }, [initialData?.blacklistId, initialData?.source, initialData?.id]);
 
   useEffect(() => {
     if (initialData?.id && !initialData.manualData?.length) {
@@ -324,6 +390,14 @@ const AddEntriesModal = ({ onClose, onSave, initialData }) => {
         }
       }
     });
+    const hasAnyName = NAME_FIELDS.some(f => {
+      const val = refs.current[f]?.value;
+      return val && String(val).trim().length > 0;
+    });
+    setHasNameInput(hasAnyName);
+    if (hasAnyName) {
+      setCurrentEntryErrors(prev => prev.filter(f => !NAME_FIELDS.includes(f)));
+    }
   };
 
   const toggleVoice = () => {
@@ -351,14 +425,43 @@ const AddEntriesModal = ({ onClose, onSave, initialData }) => {
     return data;
   };
 
-  const clearPersonRefs = () => ALL_FIELDS.forEach(f => { if (refs.current[f]) refs.current[f].value = ''; });
+  const handleNameInputChange = () => {
+    const hasAnyName = NAME_FIELDS.some(f => {
+      const val = refs.current[f]?.value;
+      return val && String(val).trim().length > 0;
+    });
+    setHasNameInput(hasAnyName);
+    if (hasAnyName) {
+      setCurrentEntryErrors(prev => prev.filter(f => !NAME_FIELDS.includes(f)));
+    }
+  };
+
+  const handleBatchMetaChange = (key) => (e) => {
+    const value = e.target.value;
+    setBatchMeta(prev => ({ ...prev, [key]: value }));
+  };
+
+  const handleAutoIdToggle = () => {
+    const next = !autoGenerateId;
+    setAutoGenerateId(next);
+    if (next) {
+      if (refs.current.blacklistId) refs.current.blacklistId.value = '';
+      setBatchMeta(prev => ({ ...prev, blacklistId: '' }));
+    }
+  };
+
+  const clearPersonRefs = () => {
+    // Rely on formKey to clear refs automatically
+    setFormKey(prev => prev + 1);
+    setHasNameInput(false);
+  };
 
   const handleAddOrUpdateEntry = useCallback(() => {
     const data = readRefs();
-    const hasAnyName = ['name1','name2','name3','name4','name5','name6','nameNonLatin','fullName']
-      .some(f => data[f] && String(data[f]).trim().length > 0);
+    const hasAnyName = NAME_FIELDS.some(f => data[f] && String(data[f]).trim().length > 0);
 
     if (!hasAnyName) { 
+      setCurrentEntryErrors(NAME_FIELDS);
       toast.error("Please provide at least one name for the entry."); 
       return; 
     }
@@ -390,17 +493,26 @@ const AddEntriesModal = ({ onClose, onSave, initialData }) => {
     } else {
       setEntries(prev => [...prev, { ...data, id: Date.now(), _isDirty: true, errors: [] }]);
     }
+    setCurrentEntryErrors([]);
     clearPersonRefs();
   }, [editingId]);
 
   const startEditEntry = useCallback((entry) => {
     setEditingId(entry.id);
     setCurrentEntryErrors(entry.errors || []);
+    setFormKey(prev => prev + 1); // trigger remount
     setTimeout(() => {
-      ALL_FIELDS.forEach(f => { if (refs.current[f]) refs.current[f].value = entry[f] || ''; });
+      const hasAnyName = NAME_FIELDS.some(f => entry[f] && String(entry[f]).trim().length > 0);
+      setHasNameInput(hasAnyName);
       document.getElementById('entry-form-scroll')?.scrollTo({ top: 0, behavior: 'smooth' });
     }, 0);
   }, []);
+
+  const cancelEdit = () => {
+    setEditingId(null);
+    setCurrentEntryErrors([]);
+    clearPersonRefs();
+  };
 
   const removeEntry = useCallback((id) => {
     setEntries(prev => prev.filter(e => e.id !== id));
@@ -409,9 +521,10 @@ const AddEntriesModal = ({ onClose, onSave, initialData }) => {
 
   const handleFinalSave = async () => {
     const data = readRefs();
-    const blacklistId = data.blacklistId || initialData?.blacklistId || '';
+    const blacklistId = autoGenerateId ? '' : (data.blacklistId || initialData?.blacklistId || '');
     const source      = data.source      || initialData?.source      || '';
-    if (!blacklistId || !source) { toast.error('Please provide Blacklist ID and Source.'); return; }
+    if (!source) { toast.error('Please provide Source.'); return; }
+    if (!autoGenerateId && !blacklistId) { toast.error('Please provide a Blacklist ID or enable auto-generation.'); return; }
     if (!entries.length)         { toast.error('Add at least one entry to the batch.'); return; }
 
     setIsSaving(true);
@@ -420,7 +533,7 @@ const AddEntriesModal = ({ onClose, onSave, initialData }) => {
       const user = JSON.parse(localStorage.getItem('user') || '{}');
       await onSave({
         ...initialData,
-        blacklistId,
+        blacklistId: autoGenerateId ? undefined : blacklistId,
         source,
         status: 'READY',
         date: initialData?.date || new Date().toISOString().split('T')[0],
@@ -434,15 +547,36 @@ const AddEntriesModal = ({ onClose, onSave, initialData }) => {
     }
   };
 
-  const renderField = (fieldKey, inputRef, hasError, extra = {}) => (
-    <Field
-      fieldKey={fieldKey}
-      inputRef={inputRef}
-      hasError={hasError}
-      placeholder={extra.placeholder || FIELD_EXAMPLES[fieldKey] || (COUNTRY_FIELDS.has(fieldKey) ? 'Select a country' : undefined)}
-      options={COUNTRY_FIELDS.has(fieldKey) ? countryOptions : extra.options}
-    />
-  );
+  const renderField = (fieldKey, inputRef, hasError, extra = {}) => {
+    const fieldOptions = COUNTRY_FIELDS.has(fieldKey) ? countryOptions : extra.options;
+    let defaultPlaceholder = FIELD_EXAMPLES[fieldKey];
+    
+    if (fieldOptions && defaultPlaceholder?.startsWith('e.g.')) {
+      defaultPlaceholder = `Select ${FIELD_LABELS[fieldKey]?.toLowerCase() || 'option'}...`;
+    }
+
+    const currentEntry = editingId ? entries.find(e => e.id === editingId) : null;
+    const defaultVal = currentEntry ? currentEntry[fieldKey] : '';
+
+    return (
+      <Field
+        fieldKey={fieldKey}
+        inputRef={inputRef}
+        hasError={hasError}
+        isRequired={extra.isRequired}
+        helperText={extra.helperText}
+        onChange={extra.onChange}
+        disabled={extra.disabled}
+        defaultValue={defaultVal}
+        placeholder={extra.placeholder || defaultPlaceholder || (COUNTRY_FIELDS.has(fieldKey) ? 'Select a country' : undefined)}
+        options={fieldOptions}
+      />
+    );
+  };
+
+  const isBatchReady = Boolean(batchMeta.source?.trim()) && (autoGenerateId || Boolean(batchMeta.blacklistId?.trim()));
+  const canAddEntry = hasNameInput;
+  const canFinalize = isBatchReady && entries.length > 0 && !isSaving;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-2 sm:p-4">
@@ -480,13 +614,10 @@ const AddEntriesModal = ({ onClose, onSave, initialData }) => {
         )}
 
         {/* ── Body: form + table ── */}
-        <div className="flex flex-col lg:flex-row flex-1 overflow-hidden p-2 sm:p-3 bg-slate-50/50 gap-0">
+        <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1.45fr)_minmax(0,1fr)] flex-1 overflow-hidden p-3 sm:p-4 bg-slate-50/50 gap-3">
 
           {/* LEFT: form */}
-          <div 
-             style={{ width: typeof window !== 'undefined' && window.innerWidth >= 1024 ? leftWidth : 'auto' }}
-             className="w-full lg:w-auto bg-white border border-slate-100 rounded-xl flex flex-col shadow-sm overflow-hidden shrink-0 mb-3 lg:mb-0"
-          >
+          <div className="w-full bg-white border border-slate-100 rounded-xl flex flex-col shadow-sm overflow-hidden min-h-0">
             
             {/* STICKY HEADER */}
             <div className="p-4 border-b border-slate-100 bg-white z-10">
@@ -496,12 +627,53 @@ const AddEntriesModal = ({ onClose, onSave, initialData }) => {
                   <span className="bg-amber-50 text-amber-600 border border-amber-100 px-2 py-0.5 rounded-full lowercase italic">editing...</span>
                 )}
               </div>
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                <StatusPill label="Batch ID" ok={autoGenerateId || Boolean(batchMeta.blacklistId?.trim())} value={autoGenerateId ? 'Auto' : undefined} />
+                <StatusPill label="Source" ok={Boolean(batchMeta.source?.trim())} />
+                <StatusPill label="Entry name" ok={hasNameInput} />
+              </div>
+              <p className="mt-2 text-[10px] text-slate-400">
+                Finalize requires Source + Batch ID (or Auto). Add Entry requires at least one name.
+              </p>
             </div>
 
             {/* Batch identity */}
-            <div className="px-4 py-2 bg-slate-50 border-b border-slate-100 flex gap-2">
-               <div className="flex-1"><Field fieldKey="blacklistId" inputRef={el => refs.current.blacklistId = el} defaultValue={initialData?.blacklistId || ''} placeholder={FIELD_EXAMPLES.blacklistId} /></div>
-               <div className="flex-1"><Field fieldKey="source"      inputRef={el => refs.current.source = el}      defaultValue={initialData?.source || ''} placeholder={FIELD_EXAMPLES.source} /></div>
+            <div className="px-4 py-2 bg-slate-50 border-b border-slate-100 space-y-2">
+              <div className="flex gap-2">
+                <div className="flex-1">
+                  <Field
+                    fieldKey="blacklistId"
+                    inputRef={el => refs.current.blacklistId = el}
+                    defaultValue={initialData?.blacklistId || ''}
+                    placeholder={FIELD_EXAMPLES.blacklistId}
+                    isRequired={!autoGenerateId && REQUIRED_BATCH_FIELDS.has('blacklistId')}
+                    helperText={autoGenerateId ? 'Auto-generated on save' : undefined}
+                    onChange={handleBatchMetaChange('blacklistId')}
+                    disabled={autoGenerateId}
+                  />
+                </div>
+                <div className="flex-1">
+                  <Field
+                    fieldKey="source"
+                    inputRef={el => refs.current.source = el}
+                    defaultValue={initialData?.source || ''}
+                    placeholder={FIELD_EXAMPLES.source}
+                    isRequired={REQUIRED_BATCH_FIELDS.has('source')}
+                    onChange={handleBatchMetaChange('source')}
+                  />
+                </div>
+              </div>
+              {!isEditMode && (
+                <label className="flex items-center gap-2 text-[10px] text-slate-500">
+                  <input
+                    type="checkbox"
+                    checked={autoGenerateId}
+                    onChange={handleAutoIdToggle}
+                    className="accent-[#031124]"
+                  />
+                  Auto-generate Batch ID
+                </label>
+              )}
             </div>
 
             {/* AI MAGIC BAR */}
@@ -542,22 +714,54 @@ const AddEntriesModal = ({ onClose, onSave, initialData }) => {
             </div> */}
 
             {/* Form Fields */}
-            <div id="entry-form-scroll" className="flex-1 overflow-y-auto p-4 space-y-4">
+            <div id="entry-form-scroll" className="flex-1 overflow-y-auto p-4 space-y-4" key={formKey}>
               <Section title="Names & Identity">
+                <p className="text-[10px] text-slate-400">
+                  Add at least one name (Full Name, Name 1-6, or Non-Latin Name).
+                </p>
                 <div className="mb-2">
-                  {renderField('fullName', el => refs.current.fullName = el, currentEntryErrors.includes('fullName'))}
+                  {renderField('fullName', el => refs.current.fullName = el, currentEntryErrors.includes('fullName'), {
+                    onChange: handleNameInputChange,
+                  })}
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   {['name1','name2','name3','name4','name5','name6'].map(f => (
                     <React.Fragment key={f}>
-                      {renderField(f, el => refs.current[f] = el, currentEntryErrors.includes(f))}
+                      {renderField(f, el => refs.current[f] = el, currentEntryErrors.includes(f), {
+                        onChange: handleNameInputChange,
+                      })}
                     </React.Fragment>
                   ))}
                 </div>
-                {renderField('title', el => refs.current.title = el)}
+                {renderField('title', el => refs.current.title = el, false, { options: [
+                  { label: 'Mr', value: 'Mr' },
+                  { label: 'Mrs', value: 'Mrs' },
+                  { label: 'Ms', value: 'Ms' },
+                  { label: 'Miss', value: 'Miss' },
+                  { label: 'Dr', value: 'Dr' },
+                  { label: 'Prof', value: 'Prof' },
+                  { label: 'Sheikh', value: 'Sheikh' },
+                  { label: 'Imam', value: 'Imam' },
+                  { label: 'General', value: 'General' },
+                  { label: 'Captain', value: 'Captain' },
+                  { label: 'Other', value: 'Other' }
+                ] })}
                 <div className="grid grid-cols-3 gap-2 mt-2">
-                  {renderField('nameNonLatin', el => refs.current.nameNonLatin = el)}
-                  {renderField('nonLatinType', el => refs.current.nonLatinType = el)}
+                  {renderField('nameNonLatin', el => refs.current.nameNonLatin = el, currentEntryErrors.includes('nameNonLatin'), {
+                    onChange: handleNameInputChange,
+                  })}
+                  {renderField('nonLatinType', el => refs.current.nonLatinType = el, false, { options: [
+                    { label: 'Arabic', value: 'Arabic' },
+                    { label: 'Cyrillic', value: 'Cyrillic' },
+                    { label: 'Chinese', value: 'Chinese' },
+                    { label: 'Japanese', value: 'Japanese' },
+                    { label: 'Korean', value: 'Korean' },
+                    { label: 'Hindi', value: 'Hindi' },
+                    { label: 'Urdu', value: 'Urdu' },
+                    { label: 'Farsi', value: 'Farsi' },
+                    { label: 'Hebrew', value: 'Hebrew' },
+                    { label: 'Other', value: 'Other' }
+                  ] })}
                   {renderField('nonLatinLang', el => refs.current.nonLatinLang = el)}
                 </div>
               </Section>
@@ -608,10 +812,36 @@ const AddEntriesModal = ({ onClose, onSave, initialData }) => {
 
               <Section title="Sanction Details" color="text-red-500" bg="bg-red-50/30 border-red-100">
                 <div className="grid grid-cols-2 gap-2">
-                  {renderField('groupType', el => refs.current.groupType = el)}
-                  {renderField('regime', el => refs.current.regime = el)}
-                  {renderField('aliasType', el => refs.current.aliasType = el)}
-                  {renderField('aliasQuality', el => refs.current.aliasQuality = el)}
+                  {renderField('groupType', el => refs.current.groupType = el, false, { options: [
+                    { label: 'Terrorism', value: 'Terrorism' },
+                    { label: 'Proliferation', value: 'Proliferation' },
+                    { label: 'Narcotics', value: 'Narcotics' },
+                    { label: 'Cyber', value: 'Cyber' },
+                    { label: 'Human Rights', value: 'Human Rights' },
+                    { label: 'Sanctions Evasion', value: 'Sanctions Evasion' },
+                    { label: 'Other', value: 'Other' }
+                  ] })}
+                  {renderField('regime', el => refs.current.regime = el, false, { options: [
+                    { label: 'UN 1267', value: 'UN 1267' },
+                    { label: 'UN 1988', value: 'UN 1988' },
+                    { label: 'OFAC SDN', value: 'OFAC SDN' },
+                    { label: 'OFAC Non-SDN', value: 'OFAC Non-SDN' },
+                    { label: 'EU Consolidated', value: 'EU Consolidated' },
+                    { label: 'UK HMT', value: 'UK HMT' },
+                    { label: 'Interpole', value: 'Interpole' },
+                    { label: 'Other', value: 'Other' }
+                  ] })}
+                  {renderField('aliasType', el => refs.current.aliasType = el, false, { options: [
+                    { label: 'AKA (Also Known As)', value: 'AKA' },
+                    { label: 'FKA (Formerly Known As)', value: 'FKA' },
+                    { label: 'DBA (Doing Business As)', value: 'DBA' },
+                    { label: 'Other', value: 'Other' }
+                  ] })}
+                  {renderField('aliasQuality', el => refs.current.aliasQuality = el, false, { options: [
+                    { label: 'Strong', value: 'Strong' },
+                    { label: 'Weak', value: 'Weak' },
+                    { label: 'Low Quality', value: 'Low Quality' }
+                  ] })}
                   {renderField('listedOn', el => refs.current.listedOn = el, currentEntryErrors.includes('listedOn'))}
                   {renderField('ukSanctionsListDate', el => refs.current.ukSanctionsListDate = el, currentEntryErrors.includes('ukSanctionsListDate'))}
                   {renderField('lastUpdated', el => refs.current.lastUpdated = el, currentEntryErrors.includes('lastUpdated'))}
@@ -620,33 +850,41 @@ const AddEntriesModal = ({ onClose, onSave, initialData }) => {
                 {renderField('otherInfo', el => refs.current.otherInfo = el)}
               </Section>
 
-              {/* Add / Update CTA — sticky */}
-              <div className="sticky bottom-0 bg-white pt-3 pb-1">
+              {/* Add / Update CTA */}
+              <div className="pt-4 pb-2">
+                {editingId && (
+                  <button
+                    onClick={cancelEdit}
+                    className="mb-2 w-full text-xs font-semibold text-slate-500 hover:text-slate-700 transition-colors"
+                  >
+                    Cancel edit
+                  </button>
+                )}
                 <button
                   onClick={handleAddOrUpdateEntry}
+                  disabled={!canAddEntry}
                   className={`w-full py-3 rounded-xl font-bold text-sm shadow-md transition-all flex items-center justify-center gap-2 ${
-                    editingId
-                      ? 'bg-amber-500 hover:bg-amber-600 text-white'
-                      : 'bg-[#031124] hover:bg-slate-800 text-white'
+                    !canAddEntry
+                      ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                      : editingId
+                        ? 'bg-amber-500 hover:bg-amber-600 text-white'
+                        : 'bg-[#031124] hover:bg-slate-800 text-white'
                   }`}
                 >
                   {editingId ? <Check size={16} /> : <Plus size={16} />}
                   {editingId ? 'Update Entry' : 'Add Entry to Batch'}
                 </button>
+                {!canAddEntry && (
+                  <p className="mt-2 text-[10px] text-slate-400 text-center">
+                    Add at least one name to enable.
+                  </p>
+                )}
               </div>
             </div>
           </div>
 
-          {/* DRAG HANDLE */}
-          <div 
-            onMouseDown={startResize}
-            className="hidden lg:flex w-3 mx-0.5 cursor-col-resize items-center justify-center hover:bg-slate-200/50 rounded-full transition-colors group z-10 shrink-0"
-          >
-            <div className="w-1 h-8 bg-slate-200 rounded-full group-hover:bg-slate-400 shadow-sm transition-colors" />
-          </div>
-
           {/* RIGHT: table preview */}
-          <div className="flex-1 bg-white border border-slate-100 rounded-xl flex flex-col shadow-sm overflow-hidden min-h-0">
+          <div className="bg-white border border-slate-100 rounded-xl flex flex-col shadow-sm overflow-hidden min-h-0">
             <div className="px-4 py-3 border-b border-slate-50 flex items-center gap-2 shrink-0">
               <Users size={14} className="text-emerald-500" />
               <span className="font-bold text-sm text-slate-800">Batch Preview</span>
@@ -687,8 +925,12 @@ const AddEntriesModal = ({ onClose, onSave, initialData }) => {
           </button>
           <button
             onClick={handleFinalSave}
-            disabled={isSaving}
-            className="px-8 py-2.5 bg-[#031124] text-white rounded-xl font-bold text-sm shadow-lg hover:bg-slate-800 transition-all active:scale-95 disabled:opacity-60 flex items-center gap-2"
+            disabled={!canFinalize}
+            className={`px-8 py-2.5 rounded-xl font-bold text-sm shadow-lg transition-all active:scale-95 flex items-center gap-2 ${
+              !canFinalize
+                ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                : 'bg-[#031124] text-white hover:bg-slate-800'
+            }`}
           >
             {isSaving && <Loader2 size={14} className="animate-spin" />}
             {isSaving ? 'Saving…' : (initialData ? 'Update Batch' : 'Finalize & Save')}

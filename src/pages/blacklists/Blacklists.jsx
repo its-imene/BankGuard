@@ -113,16 +113,16 @@ const Blacklists = () => {
   };
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 space-y-6 min-h-screen bg-[#F8FAFC]">
+    <div className="p-4 sm:p-6 lg:p-8 space-y-6 min-h-screen bg-[#F8FAFC] max-w-[1600px] mx-auto animate-in fade-in duration-500">
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-[#031124] flex items-center justify-center shadow-lg shadow-slate-900/20">
-            <Shield size={20} className="text-orange-400" />
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 rounded-2xl bg-[#031124] flex items-center justify-center shadow-lg shadow-slate-900/20 ring-1 ring-white/10">
+            <Shield size={24} className="text-orange-400" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-slate-900 leading-tight">Blacklists</h1>
-            <p className="text-sm text-slate-500">Manage and upload regulatory blacklists</p>
+            <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Blacklists</h1>
+            <p className="text-sm font-medium text-slate-500 mt-1">Manage and upload regulatory blacklists</p>
           </div>
         </div>
         {(() => {
@@ -132,9 +132,9 @@ const Blacklists = () => {
           return (
             <button
               onClick={() => setShowMethodSelector(true)}
-              className="flex items-center gap-2 bg-[#031124] hover:bg-slate-800 text-white px-5 py-2.5 rounded-xl font-semibold text-sm transition-all shadow-lg shadow-slate-900/20 active:scale-95 self-start sm:self-auto"
+              className="flex items-center justify-center gap-2 bg-[#031124] hover:bg-slate-800 text-white h-11 px-6 rounded-xl font-bold text-sm transition-all duration-200 shadow-lg shadow-slate-900/20 active:scale-95 focus-visible:ring-4 focus-visible:ring-slate-900/40 w-full sm:w-auto"
             >
-              <Plus size={16} />
+              <Plus size={18} />
               Add New Blacklist
             </button>
           );
@@ -142,16 +142,16 @@ const Blacklists = () => {
       </div>
 
       {/* Stats bar */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {[
           { label: 'Total', value: blacklists.length, color: 'text-slate-700' },
           { label: 'Valid',      value: blacklists.filter(b => b.status === 'VALID').length,      color: 'text-emerald-600' },
           { label: 'Erroneous', value: blacklists.filter(b => b.status === 'ERRONEOUS').length,  color: 'text-red-600'     },
           { label: 'Processing', value: blacklists.filter(b => b.status === 'PROCESSING').length, color: 'text-blue-600'    },
         ].map(stat => (
-          <div key={stat.label} className="bg-white rounded-xl border border-slate-100 px-4 py-3 flex items-center justify-between shadow-sm">
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">{stat.label}</span>
-            <span className={`text-xl font-bold ${stat.color}`}>{stat.value}</span>
+          <div key={stat.label} className="bg-white rounded-2xl border border-slate-100 p-5 flex flex-col justify-center shadow-sm hover:shadow-md transition-shadow duration-200">
+            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">{stat.label}</span>
+            <span className={`text-3xl font-extrabold ${stat.color} tracking-tight`}>{stat.value}</span>
           </div>
         ))}
       </div>

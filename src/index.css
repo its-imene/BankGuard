@@ -1,1 +1,23 @@
 @import "tailwindcss";
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    scroll-behavior: smooth;
+  }
+  
+  body {
+    @apply text-slate-900 bg-[#F8FAFC];
+  }
+
+  /* Accessible focus outline for all interactive elements */
+  *:focus-visible {
+    @apply outline-none ring-2 ring-indigo-500/50 ring-offset-2 ring-offset-white transition-shadow duration-200;
+  }
+
+  /* Improved text selection */
+  ::selection {
+    @apply bg-indigo-500/20 text-indigo-900;
+  }
+}

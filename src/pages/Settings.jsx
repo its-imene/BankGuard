@@ -157,7 +157,7 @@ export default function Settings() {
   `;
 
   // Dark Theme input styling
-  const inputClass = "w-full px-4 py-2.5 bg-[#0b1f3b] border border-white/10 rounded-xl text-sm text-white focus:bg-[#040f1d] focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 transition-all outline-none placeholder:text-slate-500";
+  const inputClass = "w-full h-11 px-4 bg-[#0b1f3b] border border-white/10 rounded-xl text-sm text-white focus:bg-[#040f1d] focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 transition-all outline-none placeholder:text-slate-500";
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
@@ -298,7 +298,7 @@ export default function Settings() {
                   <button
                     type="submit"
                     disabled={isSavingProfile}
-                    className="flex items-center justify-center gap-2 bg-orange-500 hover:bg-orange-600 text-white font-bold text-sm px-6 py-3 rounded-xl shadow-lg shadow-orange-500/20 transition-all disabled:opacity-60"
+                    className="flex items-center justify-center gap-2 bg-orange-500 hover:bg-orange-600 text-white font-bold text-sm h-11 px-6 rounded-xl shadow-lg shadow-orange-500/20 transition-all disabled:opacity-60 focus-visible:ring-4 focus-visible:ring-orange-500/30"
                   >
                     {isSavingProfile && <Loader2 size={16} className="animate-spin" />}
                     <span>{isSavingProfile ? 'Saving Details...' : 'Save Profile'}</span>
@@ -392,7 +392,7 @@ export default function Settings() {
                     <button
                       onClick={handleTestSound}
                       disabled={isPlayingTest}
-                      className="w-full sm:w-auto flex items-center justify-center gap-2.5 bg-orange-500 hover:bg-orange-600 text-white font-bold text-sm px-6 py-3 rounded-xl shadow-lg shadow-orange-500/20 transition-all active:scale-95 disabled:opacity-85"
+                      className="w-full sm:w-auto flex items-center justify-center gap-2.5 bg-orange-500 hover:bg-orange-600 text-white font-bold text-sm h-11 px-6 rounded-xl shadow-lg shadow-orange-500/20 transition-all active:scale-95 disabled:opacity-85 focus-visible:ring-4 focus-visible:ring-orange-500/30"
                     >
                       {isPlayingTest ? (
                         <>

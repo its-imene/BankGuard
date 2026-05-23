@@ -113,16 +113,16 @@ const Navbar = ({ onSearch }) => {
           placeholder="Search by ID, source or status…"
           className="
             w-full bg-gray-50 text-[#031124] text-sm
-            py-2.5 pl-10 pr-9 rounded-xl
+            h-11 pl-10 pr-9 rounded-xl
             border border-transparent
-            focus:outline-none focus:bg-white focus:border-indigo-200 focus:ring-2 focus:ring-indigo-500/10
+            focus:outline-none focus:bg-white focus:border-indigo-200 focus:ring-4 focus:ring-indigo-500/10
             transition-all duration-200 placeholder:text-gray-400
           "
         />
         {searchTerm && (
           <button
             onClick={clearSearch}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors p-2 rounded-full hover:bg-gray-100"
             aria-label="Clear search"
           >
             <X size={13} />
@@ -131,18 +131,18 @@ const Navbar = ({ onSearch }) => {
       </div>
 
       {/* ── Right actions ── */}
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-2">
 
         {/* Notifications */}
         <div className="relative">
           <button
             onClick={() => { setNotifsOpen(o => !o); setProfileOpen(false); }}
             aria-label="Notifications"
-            className="relative flex items-center justify-center w-9 h-9 rounded-xl hover:bg-gray-50 transition-colors"
+            className="relative flex items-center justify-center w-11 h-11 rounded-xl hover:bg-gray-50 transition-all focus-visible:ring-2 focus-visible:ring-indigo-500"
           >
-            <Bell size={18} className="text-gray-500" />
+            <Bell size={20} className="text-gray-500" />
             {unread > 0 && (
-              <span className="absolute top-1.5 right-1.5 min-w-[16px] h-4 px-0.5 bg-red-500 rounded-full border-2 border-white text-[9px] flex items-center justify-center font-bold text-white leading-none">
+              <span className="absolute top-2 right-2 min-w-[16px] h-4 px-0.5 bg-red-500 rounded-full border-2 border-white text-[9px] flex items-center justify-center font-bold text-white leading-none">
                 {unread > 9 ? '9+' : unread}
               </span>
             )}
