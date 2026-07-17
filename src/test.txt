@@ -78,7 +78,7 @@ const Blacklists = () => {
 export default Blacklists;
 
 
-Group ID 
+
 Name 6 
 Name 1 
 Name 2 
@@ -119,3 +119,4 @@ Listed On
 UK Sanctions List Date Designated 
 
 Last Updated 
+Group ID 
